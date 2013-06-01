@@ -1,0 +1,13 @@
+TODO
+
+- heart attack indicator; when a worker thread throws an exception, it should be posted on a central topic
+that will be listened to by the master and he will decide to kill
+
+- the loggingthread needs to be cleaned up because it will never be ending.
+
+- make use of a logging framework
+
+DONE
+
+- be able to launch virtual machines from a coach
+
