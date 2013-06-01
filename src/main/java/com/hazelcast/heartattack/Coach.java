@@ -7,6 +7,7 @@ import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
+import org.apache.log4j.Logger;
 
 import java.io.*;
 import java.util.*;
@@ -16,8 +17,10 @@ import java.util.concurrent.Future;
 
 public class Coach {
 
-    private final HazelcastInstance coachHazelcastInstance;
-    private final HazelcastInstance traineeHazelcastInstance;
+    private final static Logger log = Logger.getLogger(Coach.class);
+
+    private final HazelcastInstance coachHz;
+    private final HazelcastInstance traineeHz;
     private final IExecutorService traineeExecutor;
     private final IExecutorService coachExecutor;
     private final boolean isHeadCoach;
@@ -25,12 +28,12 @@ public class Coach {
     private final IMap<Object, Object> traineeParticipantMap;
 
     public Coach(boolean isHeadCoach, int durationSec) throws ExecutionException, InterruptedException {
-        this.coachHazelcastInstance = createCoachHazelcastInstance();
-        this.coachExecutor = coachHazelcastInstance.getExecutorService("Coach:Executor");
+        this.coachHz = createCoachHazelcastInstance();
+        this.coachExecutor = coachHz.getExecutorService("Coach:Executor");
 
-        this.traineeHazelcastInstance = createTraineeHazelcastInstance();
-        this.traineeExecutor = traineeHazelcastInstance.getExecutorService(Trainee.TRAINEE_EXECUTOR);
-        this.traineeParticipantMap = traineeHazelcastInstance.getMap(Trainee.TRAINEE_PARTICIPANT_MAP);
+        this.traineeHz = Trainee.createHazelcastInstance();
+        this.traineeExecutor = traineeHz.getExecutorService(Trainee.TRAINEE_EXECUTOR);
+        this.traineeParticipantMap = traineeHz.getMap(Trainee.TRAINEE_PARTICIPANT_MAP);
 
         this.isHeadCoach = isHeadCoach;
         this.durationSec = durationSec;
@@ -40,12 +43,7 @@ public class Coach {
         Config config = new Config();
         config.getUserContext().put("Coach", this);
         config.getGroupConfig().setName("coach");
-        return Hazelcast.newHazelcastInstance(config);
-    }
-
-    private HazelcastInstance createTraineeHazelcastInstance() {
-        Config config = new Config();
-        config.getGroupConfig().setName(Trainee.TRAINEE_GROUP);
+        config.setProperty("hazelcast.logging.type", "log4j");
         return Hazelcast.newHazelcastInstance(config);
     }
 
@@ -55,38 +53,38 @@ public class Coach {
         } else {
             signalHeadCoachAvailable();
 
-            submitToAllAndWait(coachExecutor, new SpawnTrainees(1));
+           // submitToAllAndWait(coachExecutor, new SpawnTrainees(1));
 
-            Set<Future> futures = new HashSet<Future>();
-            int k = 0;
-            final Set<Member> members = traineeHazelcastInstance.getCluster().getMembers();
-            for (Member member : members) {
-                //AtomicLongWorkoutFactory atomicLongHeartAttackFactory = new AtomicLongWorkoutFactory();
-                //atomicLongHeartAttackFactory.setCountersLength(10000);
-                //atomicLongHeartAttackFactory.setThreadCount(1);
-
-                MapWorkoutFactory factory = new MapWorkoutFactory();
-                factory.setThreadCount(2);
-                factory.setKeyLength(100);
-                factory.setValueLength(100);
-                factory.setKeyCount(100);
-                factory.setValueCount(100);
-
-                SetupWorkoutTask task = new SetupWorkoutTask(members.size(), k, factory);
-                futures.add(traineeExecutor.submitToMember(task, member));
-                k++;
-            }
-            getAllFutures(futures);
-
-            submitToAllAndWait(traineeExecutor, new StartTask());
-
-            sleep(durationSec);
-
-            submitToAllAndWait(traineeExecutor, new StopTask());
-
-            submitToAllAndWait(traineeExecutor, new VerifyTask());
-
-            submitToAllAndWait(traineeExecutor, new TeardownTask());
+//            Set<Future> futures = new HashSet<Future>();
+//            int k = 0;
+//            final Set<Member> members = traineeHz.getCluster().getMembers();
+//            for (Member member : members) {
+//                //AtomicLongWorkoutFactory atomicLongHeartAttackFactory = new AtomicLongWorkoutFactory();
+//                //atomicLongHeartAttackFactory.setCountersLength(10000);
+//                //atomicLongHeartAttackFactory.setThreadCount(1);
+//
+//                MapWorkoutFactory factory = new MapWorkoutFactory();
+//                factory.setThreadCount(2);
+//                factory.setKeyLength(100);
+//                factory.setValueLength(100);
+//                factory.setKeyCount(100);
+//                factory.setValueCount(100);
+//
+//                SetupWorkoutTask task = new SetupWorkoutTask(members.size(), k, factory);
+//                futures.add(traineeExecutor.submitToMember(task, member));
+//                k++;
+//            }
+//            getAllFutures(futures);
+//
+//            submitToAllAndWait(traineeExecutor, new StartTask());
+//
+//            sleep(durationSec);
+//
+//            submitToAllAndWait(traineeExecutor, new StopTask());
+//
+//            submitToAllAndWait(traineeExecutor, new VerifyTask());
+//
+//            submitToAllAndWait(traineeExecutor, new TeardownTask());
 
             submitToAllAndWait(traineeExecutor, new ShutdownTask());
         }
@@ -114,10 +112,10 @@ public class Coach {
 
     private void signalHeadCoachAvailable() {
 
-        ILock lock = coachHazelcastInstance.getLock("Coach:headCoachLock");
+        ILock lock = coachHz.getLock("Coach:headCoachLock");
         lock.lock();
         ICondition condition = lock.newCondition("Coach:headCoachCondition");
-        IAtomicLong available = coachHazelcastInstance.getAtomicLong("Coach:headCoachCount");
+        IAtomicLong available = coachHz.getAtomicLong("Coach:headCoachCount");
 
         try {
             available.incrementAndGet();
@@ -128,12 +126,12 @@ public class Coach {
     }
 
     private void awaitHeadCoachAvailable() {
-        System.out.println("Awaiting Head Coach");
+        log.info("Awaiting Head Coach");
 
-        ILock lock = coachHazelcastInstance.getLock("Coach:headCoachLock");
+        ILock lock = coachHz.getLock("Coach:headCoachLock");
         lock.lock();
         ICondition condition = lock.newCondition("Coach:headCoachCondition");
-        IAtomicLong available = coachHazelcastInstance.getAtomicLong("Coach:headCoachCount");
+        IAtomicLong available = coachHz.getAtomicLong("Coach:headCoachCount");
 
         try {
             while (available.get() == 0) {
@@ -145,7 +143,7 @@ public class Coach {
             lock.unlock();
         }
 
-        System.out.println("Head Couch Arrived");
+        log.info("Head Couch Arrived");
     }
 
     public static void main(String[] args) throws Exception {
@@ -193,13 +191,13 @@ public class Coach {
         @Override
         public Object call() throws Exception {
             try {
-                System.out.println("Init Workout");
+                log.info("Setup workout");
                 Workout workout = factory.newWorkout(hz, memberIndex, memberCount);
                 hz.getUserContext().put("workout", workout);
                 workout.setUp();
                 return null;
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Failed to setup workout", e);
                 throw e;
             }
         }
@@ -216,7 +214,7 @@ public class Coach {
         @Override
         public Object call() throws Exception {
             try {
-                System.out.println("Start Workout");
+                log.info("Start workout");
 
                 Workout workout = (Workout) hz.getUserContext().get("workout");
                 if (workout != null) {
@@ -226,7 +224,7 @@ public class Coach {
                 }
                 return null;
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Failed to start workout", e);
                 throw e;
             }
         }
@@ -242,7 +240,7 @@ public class Coach {
 
         @Override
         public Object call() throws Exception {
-            System.out.println("Stop Workout");
+            log.info("Stopping Workout");
 
             Workout workout = (Workout) hz.getUserContext().get("workout");
             if (workout != null) {
@@ -262,7 +260,7 @@ public class Coach {
 
         @Override
         public Object call() throws Exception {
-            System.out.println("Teardown Workout");
+            log.info("Teardown Workout");
 
             Workout workout = (Workout) hz.getUserContext().get("workout");
             if (workout != null) {
@@ -282,7 +280,7 @@ public class Coach {
 
         @Override
         public Object call() throws Exception {
-            System.out.println("Verify Workout");
+            log.info("Verify Workout");
 
             Workout workout = (Workout) hz.getUserContext().get("workout");
             if (workout != null) {
@@ -334,7 +332,7 @@ public class Coach {
                 if (!found) {
                     throw new RuntimeException();
                 } else {
-                    System.out.println("Trainee: " + id + " Started");
+                    log.debug("Trainee: " + id + " Started");
                 }
 
                 //int exitCode = process.waitFor();
@@ -366,10 +364,10 @@ public class Coach {
                 for (; ; ) {
                     final String line = br.readLine();
                     if (line == null) break;
-                    System.out.println(prefix + ": " + line);
+                    log.info(prefix + ": " + line);
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                log.error("Failed to log", e);
             }
         }
     }
@@ -377,7 +375,7 @@ public class Coach {
     static class ShutdownTask implements Callable, Serializable {
         @Override
         public Object call() throws Exception {
-            System.out.println("Shutdown");
+            log.info("Shutdown");
             System.exit(0);
             return null;
         }

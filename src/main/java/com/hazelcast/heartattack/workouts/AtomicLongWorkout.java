@@ -3,10 +3,14 @@ package com.hazelcast.heartattack.workouts;
 
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.heartattack.AbstractWorkout;
+import com.hazelcast.heartattack.Coach;
+import org.apache.log4j.Logger;
 
 import java.util.Random;
 
 public class AtomicLongWorkout extends AbstractWorkout<AtomicLongWorkoutFactory> {
+
+    private final static Logger log = Logger.getLogger(AtomicLongWorkout.class);
 
     private IAtomicLong totalCounter;
     private IAtomicLong[] counters;

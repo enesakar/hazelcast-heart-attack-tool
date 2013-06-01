@@ -3,10 +3,13 @@ package com.hazelcast.heartattack;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IMap;
+import com.hazelcast.heartattack.workouts.ProducerConsumerWorkout;
+import org.apache.log4j.Logger;
 
 public class Trainee {
+
+    private final static Logger log = Logger.getLogger(Trainee.class);
 
     public static final String TRAINEE_PARTICIPANT_MAP = "Trainee:ParticipantMap";
     public static final String TRAINEE_EXECUTOR = "Trainee:Executor";
@@ -14,7 +17,6 @@ public class Trainee {
 
     private final String traineeId;
     private HazelcastInstance hz;
-    private IExecutorService executorService;
     private IMap<Object, Object> map;
 
     public Trainee(String traineeId) {
@@ -22,12 +24,16 @@ public class Trainee {
     }
 
     public void start() {
-        Config config = new Config();
-        config.getGroupConfig().setName(TRAINEE_GROUP);
-        this.hz = Hazelcast.newHazelcastInstance(config);
-        this.executorService = hz.getExecutorService(TRAINEE_EXECUTOR);
+        this.hz = createHazelcastInstance();
         this.map = hz.getMap(TRAINEE_PARTICIPANT_MAP);
         this.map.put(traineeId, traineeId);
+    }
+
+    public static HazelcastInstance createHazelcastInstance() {
+        Config config = new Config();
+        config.getGroupConfig().setName(Trainee.TRAINEE_GROUP);
+        config.setProperty("hazelcast.logging.type", "log4j");
+        return Hazelcast.newHazelcastInstance(config);
     }
 
     public static void main(String[] args) {
