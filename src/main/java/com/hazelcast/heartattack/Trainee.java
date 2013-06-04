@@ -4,12 +4,12 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
-import com.hazelcast.heartattack.workouts.ProducerConsumerWorkout;
-import org.apache.log4j.Logger;
+
+import java.util.logging.Logger;
 
 public class Trainee {
 
-    private final static Logger log = Logger.getLogger(Trainee.class);
+    private final static Logger log = Logger.getLogger(Trainee.class.getName());
 
     public static final String TRAINEE_PARTICIPANT_MAP = "Trainee:ParticipantMap";
     public static final String TRAINEE_EXECUTOR = "Trainee:Executor";
@@ -32,7 +32,6 @@ public class Trainee {
     public static HazelcastInstance createHazelcastInstance() {
         Config config = new Config();
         config.getGroupConfig().setName(Trainee.TRAINEE_GROUP);
-        config.setProperty("hazelcast.logging.type", "log4j");
         return Hazelcast.newHazelcastInstance(config);
     }
 

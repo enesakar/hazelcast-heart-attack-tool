@@ -2,14 +2,13 @@ package com.hazelcast.heartattack.workouts;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.heartattack.AbstractWorkout;
-import org.apache.log4j.Logger;
 
 import java.util.Random;
+import java.util.logging.Logger;
 
 public class MapWorkout extends AbstractWorkout<MapWorkoutFactory> {
 
-    private final static Logger log = Logger.getLogger(MapWorkout.class);
-
+    private final static Logger log = Logger.getLogger(MapWorkout.class.getName());
 
     private final static String alphabet = "abcdefghijklmnopqrstuvwxyz1234567890";
 

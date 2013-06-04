@@ -2,102 +2,132 @@ package com.hazelcast.heartattack;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.heartattack.tasks.*;
 import com.hazelcast.heartattack.workouts.MapWorkoutFactory;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
-import org.apache.log4j.Logger;
 
-import java.io.*;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.logging.Logger;
+
+import static com.hazelcast.heartattack.Utils.sleepSeconds;
 
 public class Coach {
 
-    private final static Logger log = Logger.getLogger(Coach.class);
+    private final static Logger log = Logger.getLogger(Coach.class.getName());
 
     private final HazelcastInstance coachHz;
     private final HazelcastInstance traineeHz;
     private final IExecutorService traineeExecutor;
     private final IExecutorService coachExecutor;
-    private final boolean isHeadCoach;
-    private final int durationSec;
-    private final IMap<Object, Object> traineeParticipantMap;
+    private boolean isHeadCoach;
+    private int durationSec;
+    private String clientVmOptions;
 
-    public Coach(boolean isHeadCoach, int durationSec) throws ExecutionException, InterruptedException {
+    public Coach() throws ExecutionException, InterruptedException {
         this.coachHz = createCoachHazelcastInstance();
         this.coachExecutor = coachHz.getExecutorService("Coach:Executor");
 
         this.traineeHz = Trainee.createHazelcastInstance();
         this.traineeExecutor = traineeHz.getExecutorService(Trainee.TRAINEE_EXECUTOR);
-        this.traineeParticipantMap = traineeHz.getMap(Trainee.TRAINEE_PARTICIPANT_MAP);
+    }
 
-        this.isHeadCoach = isHeadCoach;
+    public HazelcastInstance getCoachHazelcastInstance() {
+        return coachHz;
+    }
+
+    public HazelcastInstance getTraineeHazelcastInstance() {
+        return traineeHz;
+    }
+
+    public void setIsHeadCoach(boolean headCoach) {
+        isHeadCoach = headCoach;
+    }
+
+    public boolean isHeadCoach() {
+        return isHeadCoach;
+    }
+
+    public void setDurationSec(Integer durationSec) {
         this.durationSec = durationSec;
+    }
+
+    public int getDurationSec() {
+        return durationSec;
+    }
+
+    public void setClientVmOptions(String clientVmOptions) {
+        this.clientVmOptions = clientVmOptions;
+    }
+
+    public String getClientVmOptions() {
+        return clientVmOptions;
     }
 
     private HazelcastInstance createCoachHazelcastInstance() {
         Config config = new Config();
         config.getUserContext().put("Coach", this);
         config.getGroupConfig().setName("coach");
-        config.setProperty("hazelcast.logging.type", "log4j");
         return Hazelcast.newHazelcastInstance(config);
     }
 
     private void run() throws InterruptedException, ExecutionException {
         if (!isHeadCoach) {
+            System.out.println("Starting assistant coach");
             awaitHeadCoachAvailable();
         } else {
+            System.out.println("Starting head coach");
+            System.out.println("clientVmOptions: " + clientVmOptions);
+
             signalHeadCoachAvailable();
 
-           // submitToAllAndWait(coachExecutor, new SpawnTrainees(1));
+            log.info("Starting trainee Java Virtual Machines");
+            submitToAllAndWait(coachExecutor, new SpawnTrainees(3, clientVmOptions));
+            log.info("All trainee Java Virtual Machines have started");
 
-//            Set<Future> futures = new HashSet<Future>();
-//            int k = 0;
-//            final Set<Member> members = traineeHz.getCluster().getMembers();
-//            for (Member member : members) {
-//                //AtomicLongWorkoutFactory atomicLongHeartAttackFactory = new AtomicLongWorkoutFactory();
-//                //atomicLongHeartAttackFactory.setCountersLength(10000);
-//                //atomicLongHeartAttackFactory.setThreadCount(1);
-//
-//                MapWorkoutFactory factory = new MapWorkoutFactory();
-//                factory.setThreadCount(2);
-//                factory.setKeyLength(100);
-//                factory.setValueLength(100);
-//                factory.setKeyCount(100);
-//                factory.setValueCount(100);
-//
-//                SetupWorkoutTask task = new SetupWorkoutTask(members.size(), k, factory);
-//                futures.add(traineeExecutor.submitToMember(task, member));
-//                k++;
-//            }
-//            getAllFutures(futures);
-//
-//            submitToAllAndWait(traineeExecutor, new StartTask());
-//
-//            sleep(durationSec);
-//
-//            submitToAllAndWait(traineeExecutor, new StopTask());
-//
-//            submitToAllAndWait(traineeExecutor, new VerifyTask());
-//
-//            submitToAllAndWait(traineeExecutor, new TeardownTask());
+            Set<Future> futures = new HashSet<Future>();
+            int k = 0;
+            final Set<Member> members = traineeHz.getCluster().getMembers();
+            for (Member member : members) {
+                //AtomicLongWorkoutFactory atomicLongHeartAttackFactory = new AtomicLongWorkoutFactory();
+                //atomicLongHeartAttackFactory.setCountersLength(10000);
+                //atomicLongHeartAttackFactory.setThreadCount(1);
+
+                MapWorkoutFactory factory = new MapWorkoutFactory();
+                factory.setThreadCount(2);
+                factory.setKeyLength(100);
+                factory.setValueLength(100);
+                factory.setKeyCount(100);
+                factory.setValueCount(100);
+
+                SetupWorkoutTask task = new SetupWorkoutTask(members.size(), k, factory);
+                futures.add(traineeExecutor.submitToMember(task, member));
+                k++;
+            }
+            getAllFutures(futures);
+
+            submitToAllAndWait(traineeExecutor, new StartTask());
+
+            sleepSeconds(durationSec);
+
+            submitToAllAndWait(traineeExecutor, new StopTask());
+
+            submitToAllAndWait(traineeExecutor, new VerifyTask());
+
+            submitToAllAndWait(traineeExecutor, new TeardownTask());
 
             submitToAllAndWait(traineeExecutor, new ShutdownTask());
         }
     }
 
-
-    private static void sleep(int seconds) {
-        try {
-            Thread.sleep(seconds * 1000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     private void submitToAllAndWait(IExecutorService executorSerivce, Callable task) throws InterruptedException, ExecutionException {
         Map<Member, Future> map = executorSerivce.submitToAllMembers(task);
@@ -111,7 +141,6 @@ public class Coach {
     }
 
     private void signalHeadCoachAvailable() {
-
         ILock lock = coachHz.getLock("Coach:headCoachLock");
         lock.lock();
         ICondition condition = lock.newCondition("Coach:headCoachCondition");
@@ -143,241 +172,34 @@ public class Coach {
             lock.unlock();
         }
 
-        log.info("Head Couch Arrived");
+        log.info("Head Coach Arrived");
     }
 
     public static void main(String[] args) throws Exception {
         System.out.println("Hazelcast Heart Attack Coach");
 
         OptionParser parser = new OptionParser();
-        OptionSpec<Integer> duration =
-                parser.accepts("duration", "Number of seconds to run (defaults to 60 seconds)").withRequiredArg().ofType(Integer.class).defaultsTo(60);
-        OptionSpec isHeadCoachOption =
+        OptionSpec<Integer> durationSpec = parser.accepts("duration", "Number of seconds to run (defaults to 60 seconds)")
+                .withRequiredArg().ofType(Integer.class).defaultsTo(60);
+        OptionSpec<String> clientVmOptionsSpec = parser.accepts("clientVmOptions", "Client VM options (quotes can be used)")
+                .withRequiredArg().ofType(String.class).defaultsTo("");
+        OptionSpec isHeadCoachSpec =
                 parser.accepts("headCoach", "If the node is a head coach");
-        OptionSpec help =
-                parser.accepts("h", "Show help").forHelp();
+        OptionSpec helpSpec =
+                parser.accepts("help", "Show help").forHelp();
 
         OptionSet set;
         try {
             set = parser.parse(args);
+            Coach main = new Coach();
+            main.setIsHeadCoach(set.has(isHeadCoachSpec));
+            main.setDurationSec(set.valueOf(durationSpec));
+            main.setClientVmOptions(set.valueOf(clientVmOptionsSpec));
 
-            boolean isHeadCoach = set.has(isHeadCoachOption);
-
-            System.out.println("Is head coach: " + isHeadCoach);
-
-            int durationSeconds = set.valueOf(duration);
-
-            System.out.println("Duration in seconds: " + durationSeconds);
-            Coach main = new Coach(isHeadCoach, durationSeconds);
             main.run();
         } catch (OptionException e) {
-            System.out.println(e.getMessage() + ". Use -h to get overview of the help options.");
+            System.out.println(e.getMessage() + ". Use --help to get overview of the help options.");
             System.exit(1);
-        }
-    }
-
-    static class SetupWorkoutTask implements Callable, Serializable, HazelcastInstanceAware {
-        private transient HazelcastInstance hz;
-        private final int memberCount;
-        private final int memberIndex;
-        private final WorkoutFactory factory;
-
-        SetupWorkoutTask(int memberCount, int memberIndex, WorkoutFactory factory) {
-            this.memberCount = memberCount;
-            this.memberIndex = memberIndex;
-            this.factory = factory;
-        }
-
-        @Override
-        public Object call() throws Exception {
-            try {
-                log.info("Setup workout");
-                Workout workout = factory.newWorkout(hz, memberIndex, memberCount);
-                hz.getUserContext().put("workout", workout);
-                workout.setUp();
-                return null;
-            } catch (Exception e) {
-                log.error("Failed to setup workout", e);
-                throw e;
-            }
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance hz) {
-            this.hz = hz;
-        }
-    }
-
-    static class StartTask implements Callable, Serializable, HazelcastInstanceAware {
-        private transient HazelcastInstance hz;
-
-        @Override
-        public Object call() throws Exception {
-            try {
-                log.info("Start workout");
-
-                Workout workout = (Workout) hz.getUserContext().get("workout");
-                if (workout != null) {
-                    workout.start();
-                } else {
-                    System.out.println("No Workout Found to Start");
-                }
-                return null;
-            } catch (Exception e) {
-                log.error("Failed to start workout", e);
-                throw e;
-            }
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance hz) {
-            this.hz = hz;
-        }
-    }
-
-    static class StopTask implements Callable, Serializable, HazelcastInstanceAware {
-        private transient HazelcastInstance hz;
-
-        @Override
-        public Object call() throws Exception {
-            log.info("Stopping Workout");
-
-            Workout workout = (Workout) hz.getUserContext().get("workout");
-            if (workout != null) {
-                workout.stop();
-            }
-            return null;
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance hz) {
-            this.hz = hz;
-        }
-    }
-
-    static class TeardownTask implements Callable, Serializable, HazelcastInstanceAware {
-        private transient HazelcastInstance hz;
-
-        @Override
-        public Object call() throws Exception {
-            log.info("Teardown Workout");
-
-            Workout workout = (Workout) hz.getUserContext().get("workout");
-            if (workout != null) {
-                workout.tearDown();
-            }
-            return null;
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance hz) {
-            this.hz = hz;
-        }
-    }
-
-    static class VerifyTask implements Callable, Serializable, HazelcastInstanceAware {
-        private transient HazelcastInstance hz;
-
-        @Override
-        public Object call() throws Exception {
-            log.info("Verify Workout");
-
-            Workout workout = (Workout) hz.getUserContext().get("workout");
-            if (workout != null) {
-                workout.verifyNoHeartAttack();
-            }
-            return null;
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance hz) {
-            this.hz = hz;
-        }
-    }
-
-    static class SpawnTrainees implements Callable, Serializable, HazelcastInstanceAware {
-        private transient HazelcastInstance hz;
-        private final int count;
-
-
-        SpawnTrainees(int count) {
-            this.count = count;
-        }
-
-        @Override
-        public Object call() throws Exception {
-            Coach coach = (Coach) hz.getUserContext().get("Coach");
-
-            String classpath = System.getProperty("java.class.path");
-
-            for (int k = 0; k < count; k++) {
-                String id = UUID.randomUUID().toString();
-
-                Process process = new ProcessBuilder("java", "-cp", classpath, Trainee.class.getName(), id)
-                        .directory(new File(System.getProperty("user.dir")))
-                        .start();
-                new LoggingThread(id, process.getInputStream()).start();
-                new LoggingThread(id, process.getErrorStream()).start();
-
-                boolean found = false;
-                for (int l = 0; l < 30; l++) {
-                    if (coach.traineeParticipantMap.containsKey(id)) {
-                        coach.traineeParticipantMap.remove(id);
-                        found = true;
-                    } else {
-                        sleep(1);
-                    }
-                }
-
-                if (!found) {
-                    throw new RuntimeException();
-                } else {
-                    log.debug("Trainee: " + id + " Started");
-                }
-
-                //int exitCode = process.waitFor();
-                //if (exitCode != 0) {
-                //    throw new RuntimeException("Failed to spawn a new vm");
-                //}
-            }
-            return null;
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance hz) {
-            this.hz = hz;
-        }
-    }
-
-    private static class LoggingThread extends Thread {
-        private final InputStream inputStream;
-        private final String prefix;
-
-        public LoggingThread(String prefix, InputStream inputStream) {
-            this.inputStream = inputStream;
-            this.prefix = prefix;
-        }
-
-        public void run() {
-            try {
-                BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
-                for (; ; ) {
-                    final String line = br.readLine();
-                    if (line == null) break;
-                    log.info(prefix + ": " + line);
-                }
-            } catch (IOException e) {
-                log.error("Failed to log", e);
-            }
-        }
-    }
-
-    static class ShutdownTask implements Callable, Serializable {
-        @Override
-        public Object call() throws Exception {
-            log.info("Shutdown");
-            System.exit(0);
-            return null;
         }
     }
 }
