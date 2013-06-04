@@ -14,13 +14,11 @@ public abstract class AbstractWorkoutFactory implements WorkoutFactory {
     }
 
     @Override
-    public Workout newWorkout(HazelcastInstance hz, int memberIndex, int memberCount) {
+    public Workout newWorkout(HazelcastInstance hz) {
         try {
             Class<AbstractWorkout> clazz = (Class<AbstractWorkout>) AbstractWorkoutFactory.class.getClassLoader().loadClass(clazzName);
             AbstractWorkout workout = clazz.newInstance();
             workout.setFactory(this);
-            workout.setMemberCount(memberCount);
-            workout.setMemberIndex(memberIndex);
             workout.setHazelcastInstance(hz);
             return workout;
         } catch (ClassNotFoundException e) {

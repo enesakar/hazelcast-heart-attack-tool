@@ -9,14 +9,14 @@ public class ProducerConsumerWorkout extends AbstractWorkout {
     private final static Logger log = Logger.getLogger(ProducerConsumerWorkout.class.getName());
 
     @Override
-    public void setUp() throws Exception {
+    public void localSetup() throws Exception {
     }
 
     @Override
-    public void tearDown() throws Exception {
+    public void localTearDown() throws Exception {
     }
 
     @Override
-    public void verifyNoHeartAttack() throws Exception {
+    public void localVerify() throws Exception {
     }
 }

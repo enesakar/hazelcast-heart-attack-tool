@@ -10,9 +10,7 @@ import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -87,47 +85,46 @@ public class Coach {
             System.out.println("Starting head coach");
             System.out.println("clientVmOptions: " + clientVmOptions);
 
+            MapWorkoutFactory factory = new MapWorkoutFactory();
+            factory.setThreadCount(2);
+            factory.setKeyLength(100);
+            factory.setValueLength(100);
+            factory.setKeyCount(100);
+            factory.setValueCount(100);
+
             signalHeadCoachAvailable();
 
             log.info("Starting trainee Java Virtual Machines");
-            submitToAllAndWait(coachExecutor, new SpawnTrainees(3, clientVmOptions));
+            submitToAllAndWait(coachExecutor, new SpawnTrainees(1, clientVmOptions));
             log.info("All trainee Java Virtual Machines have started");
 
-            Set<Future> futures = new HashSet<Future>();
-            int k = 0;
-            final Set<Member> members = traineeHz.getCluster().getMembers();
-            for (Member member : members) {
-                //AtomicLongWorkoutFactory atomicLongHeartAttackFactory = new AtomicLongWorkoutFactory();
-                //atomicLongHeartAttackFactory.setCountersLength(10000);
-                //atomicLongHeartAttackFactory.setThreadCount(1);
+            submitToAllAndWait(traineeExecutor, new InitWorkoutTask(factory));
 
-                MapWorkoutFactory factory = new MapWorkoutFactory();
-                factory.setThreadCount(2);
-                factory.setKeyLength(100);
-                factory.setValueLength(100);
-                factory.setKeyCount(100);
-                factory.setValueCount(100);
+            submitToOneAndWait(new GenericWorkoutTask("globalSetup"));
 
-                SetupWorkoutTask task = new SetupWorkoutTask(members.size(), k, factory);
-                futures.add(traineeExecutor.submitToMember(task, member));
-                k++;
-            }
-            getAllFutures(futures);
+            submitToAllAndWait(traineeExecutor, new GenericWorkoutTask("localSetup"));
 
-            submitToAllAndWait(traineeExecutor, new StartTask());
+            submitToAllAndWait(traineeExecutor, new GenericWorkoutTask("start"));
 
             sleepSeconds(durationSec);
 
-            submitToAllAndWait(traineeExecutor, new StopTask());
+            submitToAllAndWait(traineeExecutor, new GenericWorkoutTask("stop"));
 
-            submitToAllAndWait(traineeExecutor, new VerifyTask());
+            submitToAllAndWait(traineeExecutor, new GenericWorkoutTask("localVerify"));
 
-            submitToAllAndWait(traineeExecutor, new TeardownTask());
+            submitToOneAndWait(new GenericWorkoutTask("globalVerify"));
+
+            submitToAllAndWait(traineeExecutor, new GenericWorkoutTask("localTearDown"));
+
+            submitToOneAndWait(new GenericWorkoutTask("globalTearDown"));
 
             submitToAllAndWait(traineeExecutor, new ShutdownTask());
         }
     }
 
+    private void submitToOneAndWait(Callable task) throws InterruptedException, ExecutionException {
+        traineeExecutor.submit(task).get();
+    }
 
     private void submitToAllAndWait(IExecutorService executorSerivce, Callable task) throws InterruptedException, ExecutionException {
         Map<Member, Future> map = executorSerivce.submitToAllMembers(task);

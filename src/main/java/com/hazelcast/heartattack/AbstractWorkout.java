@@ -8,8 +8,6 @@ import java.util.concurrent.CountDownLatch;
 
 public abstract class AbstractWorkout<F extends WorkoutFactory> implements Workout {
 
-    protected int memberIndex;
-    protected int memberCount;
     protected HazelcastInstance hazelcastInstance;
     protected F factory;
 
@@ -25,22 +23,6 @@ public abstract class AbstractWorkout<F extends WorkoutFactory> implements Worko
         this.hazelcastInstance = hazelcastInstance;
     }
 
-    public int getMemberCount() {
-        return memberCount;
-    }
-
-    public void setMemberCount(int memberCount) {
-        this.memberCount = memberCount;
-    }
-
-    public int getMemberIndex() {
-        return memberIndex;
-    }
-
-    public void setMemberIndex(int memberIndex) {
-        this.memberIndex = memberIndex;
-    }
-
     public F getFactory() {
         return factory;
     }
@@ -49,7 +31,31 @@ public abstract class AbstractWorkout<F extends WorkoutFactory> implements Worko
         this.factory = factory;
     }
 
-    public Thread spawn(Runnable runnable) {
+    @Override
+    public void globalSetup() throws Exception {
+    }
+
+    @Override
+    public void localSetup() throws Exception {
+    }
+
+    @Override
+    public void localTearDown() throws Exception {
+    }
+
+    @Override
+    public void globalTearDown() throws Exception {
+    }
+
+    @Override
+    public void globalVerify() throws Exception {
+    }
+
+    @Override
+    public void localVerify() throws Exception {
+    }
+
+    public final Thread spawn(Runnable runnable) {
         Thread thread = new Thread(new CatchingRunnable(runnable));
         threads.add(thread);
         thread.start();
@@ -66,9 +72,9 @@ public abstract class AbstractWorkout<F extends WorkoutFactory> implements Worko
         @Override
         public void run() {
             try {
-                System.out.println(Thread.currentThread().getName()+" Waiting");
+                System.out.println(Thread.currentThread().getName() + " Waiting");
                 startLatch.await();
-                System.out.println(Thread.currentThread().getName()+" Starting");
+                System.out.println(Thread.currentThread().getName() + " Starting");
                 runnable.run();
             } catch (Throwable t) {
                 t.printStackTrace();
@@ -80,7 +86,6 @@ public abstract class AbstractWorkout<F extends WorkoutFactory> implements Worko
     public void start() {
         System.out.println("Start called");
         startLatch.countDown();
-
     }
 
     @Override

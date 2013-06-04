@@ -18,7 +18,7 @@ public class MapWorkout extends AbstractWorkout<MapWorkoutFactory> {
     private Random random = new Random();
 
     @Override
-    public void setUp() throws Exception {
+    public void localSetup() throws Exception {
         map = hazelcastInstance.getMap("MapWorkout:map");
         for (int k = 0; k < factory.getThreadCount(); k++) {
             spawn(new Worker());
@@ -46,13 +46,13 @@ public class MapWorkout extends AbstractWorkout<MapWorkoutFactory> {
     }
 
     @Override
-    public void tearDown() throws Exception {
+    public void localTearDown() throws Exception {
         map.destroy();
         map = null;
     }
 
     @Override
-    public void verifyNoHeartAttack() throws Exception {
+    public void localVerify() throws Exception {
         //To change body of implemented methods use File | Settings | File Templates.
     }
 

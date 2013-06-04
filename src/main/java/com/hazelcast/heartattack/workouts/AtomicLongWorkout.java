@@ -15,7 +15,7 @@ public class AtomicLongWorkout extends AbstractWorkout<AtomicLongWorkoutFactory>
     private IAtomicLong[] counters;
 
     @Override
-    public void setUp() {
+    public void localSetup() {
         totalCounter = hazelcastInstance.getAtomicLong("AtomicLongWorkout-totalCounter");
         counters = new IAtomicLong[factory.getCountersLength()];
         for (int k = 0; k < counters.length; k++) {
@@ -28,22 +28,20 @@ public class AtomicLongWorkout extends AbstractWorkout<AtomicLongWorkoutFactory>
     }
 
     @Override
-    public void verifyNoHeartAttack() {
-        if (memberIndex == 0) {
-            long expectedCount = totalCounter.get();
-            long count = 0;
-            for (int k = 0; k < counters.length; k++) {
-                count += counters[k].get();
-            }
+    public void globalVerify() {
+        long expectedCount = totalCounter.get();
+        long count = 0;
+        for (int k = 0; k < counters.length; k++) {
+            count += counters[k].get();
+        }
 
-            if (expectedCount != count) {
-                throw new RuntimeException("Expected count: " + expectedCount + " but found count was: " + count);
-            }
+        if (expectedCount != count) {
+            throw new RuntimeException("Expected count: " + expectedCount + " but found count was: " + count);
         }
     }
 
     @Override
-    public void tearDown() {
+    public void localTearDown() {
         totalCounter.destroy();
         totalCounter = null;
 

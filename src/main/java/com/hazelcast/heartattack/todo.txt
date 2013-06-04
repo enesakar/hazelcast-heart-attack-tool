@@ -3,11 +3,23 @@ TODO
 - heart attack indicator; when a worker thread throws an exception, it should be posted on a central topic
 that will be listened to by the master and he will decide to kill
 
-- the loggingthread needs to be cleaned up because it will never be ending.
+- trainee vm's need to write to a unique logfile (probably give them a different working directory)
 
-- make use of a logging framework
+- ability to configure the workouts. Currently it is hard coded.
+
+- currently we can only do a single workout, but it should be possible to run a whole bunch of workouts.
 
 DONE
 
+- should be easy to split up the tearDown in 2 phases, one is a master setup and the other one is a shared setup.
+
+- should be easy to split up the setup in 2 phases, one is a master setup and the other one is a shared setup.
+
+- membercount/memberindex needs to be removed because we want to have a dynamic number of members
+
 - be able to launch virtual machines from a coach
+
+- the loggingthread needs to be cleaned up because it will never be ending.
+
+- make use of a logging framework
 
