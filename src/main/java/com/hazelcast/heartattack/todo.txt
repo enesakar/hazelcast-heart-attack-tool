@@ -5,11 +5,15 @@ that will be listened to by the master and he will decide to kill
 
 - trainee vm's need to write to a unique logfile (probably give them a different working directory)
 
-- ability to configure the workouts. Currently it is hard coded.
-
 - a distribution of the heart attack tool
 
+- loading workout: the file should be configurable
+
 DONE
+
+- loading workout: only mapworkout currently can be loaded.
+
+- ability to configure the workouts. Currently it is hard coded.
 
 - currently we can only do a single workout, but it should be possible to run a whole bunch of workouts.
 

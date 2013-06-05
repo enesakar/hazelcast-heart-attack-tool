@@ -1,5 +1,9 @@
 package com.hazelcast.heartattack;
 
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.heartattack.exercises.MapExercise;
@@ -12,7 +16,9 @@ import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 
+import java.io.File;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -25,23 +31,15 @@ public class Coach {
 
     private final static Logger log = Logger.getLogger(Coach.class.getName());
 
-    private final HazelcastInstance coachHz;
-    private final HazelcastInstance traineeHz;
-    private final IExecutorService traineeExecutor;
-    private final IExecutorService coachExecutor;
+    private HazelcastInstance coachHz;
+    private HazelcastInstance traineeHz;
+    private IExecutorService traineeExecutor;
+    private IExecutorService coachExecutor;
     private boolean isHeadCoach;
     private int durationSec;
     private String traineeVmOptions;
     private Workout workout;
     private int traineeVmCount;
-
-    public Coach() throws ExecutionException, InterruptedException {
-        this.coachHz = createCoachHazelcastInstance();
-        this.coachExecutor = coachHz.getExecutorService("Coach:Executor");
-
-        this.traineeHz = Trainee.createHazelcastInstance();
-        this.traineeExecutor = traineeHz.getExecutorService(Trainee.TRAINEE_EXECUTOR);
-    }
 
     public void setWorkout(Workout workout) {
         this.workout = workout;
@@ -95,6 +93,13 @@ public class Coach {
     }
 
     private void run() throws InterruptedException, ExecutionException {
+        this.coachHz = createCoachHazelcastInstance();
+        this.coachExecutor = coachHz.getExecutorService("Coach:Executor");
+
+        this.traineeHz = Trainee.createHazelcastInstance();
+        this.traineeExecutor = traineeHz.getExecutorService(Trainee.TRAINEE_EXECUTOR);
+
+
         if (!isHeadCoach) {
             System.out.println("Starting assistant coach");
             awaitHeadCoachAvailable();
@@ -212,25 +217,27 @@ public class Coach {
                 System.exit(0);
             }
 
-            Coach main = new Coach();
-            main.setIsHeadCoach(set.has(isHeadCoachSpec));
-            if (main.isHeadCoach) {
-                MapExercise exercise = new MapExercise();
-                exercise.setThreadCount(2);
-                exercise.setKeyLength(100);
-                exercise.setValueLength(100);
-                exercise.setKeyCount(100);
-                exercise.setValueCount(100);
-
-                Workout workout = new Workout();
-                workout.addExercise(exercise);
-                workout.addExercise(exercise);
-                main.setWorkout(workout);
+            String workoutFileName = "workout.json";
+            List<String> workoutFiles = set.nonOptionArguments();
+            if (workoutFiles.size() == 1) {
+                workoutFileName = workoutFiles.get(0);
+            } else if(workoutFiles.size()>1){
+                System.out.println("Too many workout files specified.");
+                System.exit(0);
             }
 
-            main.setDurationSec(set.valueOf(durationSpec));
-            main.setTraineeVmOptions(set.valueOf(traineeVmOptionsSpec));
-            main.setTraineeVmCount(set.valueOf(traineeCountSpec));
+
+            Coach main = new Coach();
+            main.setIsHeadCoach(set.has(isHeadCoachSpec));
+
+            if (main.isHeadCoach) {
+                File workoutJsonFile = new File(workoutFileName);
+                Workout workout = createWorkout(workoutJsonFile);
+                main.setWorkout(workout);
+                main.setDurationSec(set.valueOf(durationSpec));
+                main.setTraineeVmOptions(set.valueOf(traineeVmOptionsSpec));
+                main.setTraineeVmCount(set.valueOf(traineeCountSpec));
+            }
 
             main.run();
         } catch (OptionException e) {
@@ -239,5 +246,25 @@ public class Coach {
         }
     }
 
+    // http://programmerbruce.blogspot.com/2011/05/deserialize-json-with-jackson-into.html
+    private static Workout createWorkout(File file) throws Exception {
+        JsonFactory jsonFactory = new JsonFactory();
+        ObjectMapper mapper = new ObjectMapper(jsonFactory);
+
+        JsonParser parser = jsonFactory.createParser(file);
+        mapper.enableDefaultTyping();
+        mapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+
+        Collection<Exercise> exercises = mapper.readValue(parser, new TypeReference<Collection<Exercise>>() {
+        });
+
+        for (Exercise exercise : exercises) {
+            System.out.println(exercise.getClass());
+        }
+
+        Workout workout = new Workout();
+        workout.getExerciseList().addAll(exercises);
+        return workout;
+    }
 
 }

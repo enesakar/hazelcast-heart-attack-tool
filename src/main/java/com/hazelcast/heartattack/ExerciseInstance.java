@@ -2,6 +2,9 @@ package com.hazelcast.heartattack;
 
 
 /**
+ * The ExerciseInstance is the 'thing' that contains the actual logic we want to run. See {@link Exercise} for more
+ * information.
+ * <p/>
  * Order of lifecycle methods:
  * <ol>
  * <li>{@link #globalSetup()}</li>
@@ -54,6 +57,13 @@ public interface ExerciseInstance {
 
     void start() throws Exception;
 
+    /**
+     * Stops this ExerciseInstance.
+     * <p/>
+     * This method is synchronous, so after this method completes, the ExerciseInstance really should be stopped.
+     *
+     * @throws Exception
+     */
     void stop() throws Exception;
 
     void localVerify() throws Exception;

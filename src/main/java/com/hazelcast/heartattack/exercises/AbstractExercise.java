@@ -1,5 +1,6 @@
 package com.hazelcast.heartattack.exercises;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.heartattack.AbstractExerciseInstance;
 import com.hazelcast.heartattack.ExerciseInstance;
@@ -8,9 +9,11 @@ import com.hazelcast.heartattack.Exercise;
 import java.util.UUID;
 
 public abstract class AbstractExercise implements Exercise {
+    @JsonIgnore
+    private  String clazzName;
 
-    private final String clazzName;
-    private final String id = UUID.randomUUID().toString();
+    @JsonIgnore
+    private  String id = UUID.randomUUID().toString();
 
     public AbstractExercise(Class<? extends AbstractExerciseInstance> clazz) {
         clazzName = clazz.getName();

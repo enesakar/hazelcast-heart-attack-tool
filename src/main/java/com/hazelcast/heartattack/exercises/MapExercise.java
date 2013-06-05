@@ -1,10 +1,17 @@
 package com.hazelcast.heartattack.exercises;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class MapExercise extends AbstractExercise {
-    private int threadCount = 10;
+
+    public int threadCount = 10;
+
     private int keyLength = 10;
+
     private int valueLength = 10;
+
     private int keyCount = 10000;
+
     private int valueCount = 10000;
 
     public MapExercise() {
