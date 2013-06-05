@@ -10,10 +10,9 @@ import java.util.UUID;
 
 public abstract class AbstractExercise implements Exercise {
     @JsonIgnore
-    private  String clazzName;
-
+    private final String clazzName;
     @JsonIgnore
-    private  String id = UUID.randomUUID().toString();
+    private final String id = UUID.randomUUID().toString();
 
     public AbstractExercise(Class<? extends AbstractExerciseInstance> clazz) {
         clazzName = clazz.getName();

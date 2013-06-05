@@ -5,42 +5,19 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>hazelcast-heartattack</groupId>
-    <artifactId>hazelcast-heartattack</artifactId>
+    <artifactId>hazelcast-heartattack-parent</artifactId>
     <version>1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>Hazelcast Heart Attack Tool - Parent</name>
+
 
     <properties>
         <jackson-version>2.2.0</jackson-version>
     </properties>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
-            <version>3.0-ALPHA</version>
-        </dependency>
+    <modules>
+        <module>hazelcast-heartattack</module>
+        <module>hazelcast-heartattack-dist</module>
+    </modules>
 
-        <dependency>
-            <groupId>net.sf.jopt-simple</groupId>
-            <artifactId>jopt-simple</artifactId>
-            <version>4.4</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-annotations</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-core</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson-version}</version>
-        </dependency>
-    </dependencies>
 </project>

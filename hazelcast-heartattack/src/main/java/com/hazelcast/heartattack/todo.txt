@@ -7,9 +7,9 @@ that will be listened to by the master and he will decide to kill
 
 - a distribution of the heart attack tool
 
-- loading workout: the file should be configurable
-
 DONE
+
+- loading workout: the file should be configurable
 
 - loading workout: only mapworkout currently can be loaded.
 
