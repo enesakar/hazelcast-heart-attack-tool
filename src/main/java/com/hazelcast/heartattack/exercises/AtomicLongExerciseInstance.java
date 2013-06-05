@@ -1,28 +1,28 @@
-package com.hazelcast.heartattack.workouts;
+package com.hazelcast.heartattack.exercises;
 
 
 import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.heartattack.AbstractWorkout;
+import com.hazelcast.heartattack.AbstractExerciseInstance;
 
 import java.util.Random;
 import java.util.logging.Logger;
 
-public class AtomicLongWorkout extends AbstractWorkout<AtomicLongWorkoutFactory> {
+public class AtomicLongExerciseInstance extends AbstractExerciseInstance<AtomicLongExercise> {
 
-    private final static Logger log = Logger.getLogger(AtomicLongWorkout.class.getName());
+    private final static Logger log = Logger.getLogger(AtomicLongExerciseInstance.class.getName());
 
     private IAtomicLong totalCounter;
     private IAtomicLong[] counters;
 
     @Override
     public void localSetup() {
-        totalCounter = hazelcastInstance.getAtomicLong("AtomicLongWorkout-totalCounter");
-        counters = new IAtomicLong[factory.getCountersLength()];
+        totalCounter = hazelcastInstance.getAtomicLong("AtomicLongExercise-totalCounter");
+        counters = new IAtomicLong[exercise.getCountersLength()];
         for (int k = 0; k < counters.length; k++) {
-            counters[k] = hazelcastInstance.getAtomicLong("AtomicLongWorkout-counter-" + k);
+            counters[k] = hazelcastInstance.getAtomicLong("AtomicLongExercise-counter-" + k);
         }
 
-        for (int k = 0; k < factory.getThreadCount(); k++) {
+        for (int k = 0; k < exercise.getThreadCount(); k++) {
             spawn(new Worker());
         }
     }
@@ -31,8 +31,8 @@ public class AtomicLongWorkout extends AbstractWorkout<AtomicLongWorkoutFactory>
     public void globalVerify() {
         long expectedCount = totalCounter.get();
         long count = 0;
-        for (int k = 0; k < counters.length; k++) {
-            count += counters[k].get();
+        for (IAtomicLong counter : counters) {
+            count += counter.get();
         }
 
         if (expectedCount != count) {
@@ -45,8 +45,8 @@ public class AtomicLongWorkout extends AbstractWorkout<AtomicLongWorkoutFactory>
         totalCounter.destroy();
         totalCounter = null;
 
-        for (int k = 0; k < counters.length; k++) {
-            counters[k].destroy();
+        for (IAtomicLong counter : counters) {
+            counter.destroy();
         }
         counters = null;
     }

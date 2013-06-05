@@ -1,12 +1,12 @@
-package com.hazelcast.heartattack.workouts;
+package com.hazelcast.heartattack.exercises;
 
-public class AtomicLongWorkoutFactory extends AbstractWorkoutFactory {
+public class AtomicLongExercise extends AbstractExercise {
 
     private int countersLength = 1000;
     private int threadCount = 1;
 
-    public AtomicLongWorkoutFactory() {
-        super(AtomicLongWorkout.class);
+    public AtomicLongExercise() {
+        super(AtomicLongExerciseInstance.class);
     }
 
     public void setCountersLength(int countersLength) {

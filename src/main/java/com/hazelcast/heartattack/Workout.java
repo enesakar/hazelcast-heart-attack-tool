@@ -1,22 +1,17 @@
 package com.hazelcast.heartattack;
 
-public interface Workout {
+import java.util.LinkedList;
+import java.util.List;
 
-    //will only be called on a single member in the cluster
-    void globalSetup() throws Exception;
+public class Workout {
 
-    void localSetup() throws Exception;
+    private List<Exercise> exerciseList = new LinkedList<Exercise>();
 
-    void localTearDown() throws Exception;
+    public void addExercise(Exercise exercise) {
+        exerciseList.add(exercise);
+    }
 
-    //will only be called on a single member in the cluster
-    void globalTearDown() throws Exception;
-
-    void start() throws Exception;
-
-    void stop() throws Exception;
-
-    void localVerify() throws Exception;
-
-    void globalVerify() throws Exception;
+    public List<Exercise> getExerciseList() {
+        return exerciseList;
+    }
 }

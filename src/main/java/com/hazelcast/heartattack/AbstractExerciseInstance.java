@@ -6,10 +6,10 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
-public abstract class AbstractWorkout<F extends WorkoutFactory> implements Workout {
+public abstract class AbstractExerciseInstance<E extends Exercise> implements ExerciseInstance {
 
     protected HazelcastInstance hazelcastInstance;
-    protected F factory;
+    protected E exercise;
 
     protected volatile boolean stop = false;
     private final CountDownLatch startLatch = new CountDownLatch(1);
@@ -23,12 +23,12 @@ public abstract class AbstractWorkout<F extends WorkoutFactory> implements Worko
         this.hazelcastInstance = hazelcastInstance;
     }
 
-    public F getFactory() {
-        return factory;
+    public E getExercise() {
+        return exercise;
     }
 
-    public void setFactory(F factory) {
-        this.factory = factory;
+    public void setExercise(E exercise) {
+        this.exercise = exercise;
     }
 
     @Override

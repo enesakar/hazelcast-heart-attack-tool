@@ -1,14 +1,14 @@
-package com.hazelcast.heartattack.workouts;
+package com.hazelcast.heartattack.exercises;
 
 import com.hazelcast.core.IMap;
-import com.hazelcast.heartattack.AbstractWorkout;
+import com.hazelcast.heartattack.AbstractExerciseInstance;
 
 import java.util.Random;
 import java.util.logging.Logger;
 
-public class MapWorkout extends AbstractWorkout<MapWorkoutFactory> {
+public class MapExerciseInstance extends AbstractExerciseInstance<MapExercise> {
 
-    private final static Logger log = Logger.getLogger(MapWorkout.class.getName());
+    private final static Logger log = Logger.getLogger(MapExerciseInstance.class.getName());
 
     private final static String alphabet = "abcdefghijklmnopqrstuvwxyz1234567890";
 
@@ -19,19 +19,19 @@ public class MapWorkout extends AbstractWorkout<MapWorkoutFactory> {
 
     @Override
     public void localSetup() throws Exception {
-        map = hazelcastInstance.getMap("MapWorkout:map");
-        for (int k = 0; k < factory.getThreadCount(); k++) {
+        map = hazelcastInstance.getMap("MapExercise:map");
+        for (int k = 0; k < exercise.getThreadCount(); k++) {
             spawn(new Worker());
         }
 
-        keys = new String[factory.getKeyCount()];
+        keys = new String[exercise.getKeyCount()];
         for (int k = 0; k < keys.length; k++) {
-            keys[k] = makeString(factory.getKeyLength());
+            keys[k] = makeString(exercise.getKeyLength());
         }
 
-        values = new String[factory.getValueCount()];
+        values = new String[exercise.getValueCount()];
         for (int k = 0; k < values.length; k++) {
-            values[k] = makeString(factory.getValueLength());
+            values[k] = makeString(exercise.getValueLength());
         }
     }
 

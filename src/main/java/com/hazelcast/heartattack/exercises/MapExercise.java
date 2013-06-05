@@ -1,14 +1,14 @@
-package com.hazelcast.heartattack.workouts;
+package com.hazelcast.heartattack.exercises;
 
-public class MapWorkoutFactory extends AbstractWorkoutFactory {
+public class MapExercise extends AbstractExercise {
     private int threadCount = 10;
     private int keyLength = 10;
     private int valueLength = 10;
     private int keyCount = 10000;
     private int valueCount = 10000;
 
-    public MapWorkoutFactory() {
-        super(MapWorkout.class);
+    public MapExercise() {
+        super(MapExerciseInstance.class);
     }
 
     public int getKeyCount() {

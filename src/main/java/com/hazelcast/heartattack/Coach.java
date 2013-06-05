@@ -2,8 +2,11 @@ package com.hazelcast.heartattack;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.heartattack.tasks.*;
-import com.hazelcast.heartattack.workouts.MapWorkoutFactory;
+import com.hazelcast.heartattack.exercises.MapExercise;
+import com.hazelcast.heartattack.tasks.GenericExerciseTask;
+import com.hazelcast.heartattack.tasks.InitExerciseTask;
+import com.hazelcast.heartattack.tasks.ShutdownTask;
+import com.hazelcast.heartattack.tasks.SpawnTrainees;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -29,6 +32,7 @@ public class Coach {
     private boolean isHeadCoach;
     private int durationSec;
     private String clientVmOptions;
+    private Workout workout;
 
     public Coach() throws ExecutionException, InterruptedException {
         this.coachHz = createCoachHazelcastInstance();
@@ -36,6 +40,10 @@ public class Coach {
 
         this.traineeHz = Trainee.createHazelcastInstance();
         this.traineeExecutor = traineeHz.getExecutorService(Trainee.TRAINEE_EXECUTOR);
+    }
+
+    public void setWorkout(Workout workout) {
+        this.workout = workout;
     }
 
     public HazelcastInstance getCoachHazelcastInstance() {
@@ -85,12 +93,6 @@ public class Coach {
             System.out.println("Starting head coach");
             System.out.println("clientVmOptions: " + clientVmOptions);
 
-            MapWorkoutFactory factory = new MapWorkoutFactory();
-            factory.setThreadCount(2);
-            factory.setKeyLength(100);
-            factory.setValueLength(100);
-            factory.setKeyCount(100);
-            factory.setValueCount(100);
 
             signalHeadCoachAvailable();
 
@@ -98,28 +100,34 @@ public class Coach {
             submitToAllAndWait(coachExecutor, new SpawnTrainees(1, clientVmOptions));
             log.info("All trainee Java Virtual Machines have started");
 
-            submitToAllAndWait(traineeExecutor, new InitWorkoutTask(factory));
-
-            submitToOneAndWait(new GenericWorkoutTask("globalSetup"));
-
-            submitToAllAndWait(traineeExecutor, new GenericWorkoutTask("localSetup"));
-
-            submitToAllAndWait(traineeExecutor, new GenericWorkoutTask("start"));
-
-            sleepSeconds(durationSec);
-
-            submitToAllAndWait(traineeExecutor, new GenericWorkoutTask("stop"));
-
-            submitToAllAndWait(traineeExecutor, new GenericWorkoutTask("localVerify"));
-
-            submitToOneAndWait(new GenericWorkoutTask("globalVerify"));
-
-            submitToAllAndWait(traineeExecutor, new GenericWorkoutTask("localTearDown"));
-
-            submitToOneAndWait(new GenericWorkoutTask("globalTearDown"));
+            for (Exercise exercise : workout.getExerciseList()) {
+                doExercise(exercise);
+            }
 
             submitToAllAndWait(traineeExecutor, new ShutdownTask());
         }
+    }
+
+    private void doExercise(Exercise exercise) throws InterruptedException, ExecutionException {
+        submitToAllAndWait(traineeExecutor, new InitExerciseTask(exercise));
+
+        submitToOneAndWait(new GenericExerciseTask("globalSetup"));
+
+        submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localSetup"));
+
+        submitToAllAndWait(traineeExecutor, new GenericExerciseTask("start"));
+
+        sleepSeconds(durationSec);
+
+        submitToAllAndWait(traineeExecutor, new GenericExerciseTask("stop"));
+
+        submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localVerify"));
+
+        submitToOneAndWait(new GenericExerciseTask("globalVerify"));
+
+        submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localTearDown"));
+
+        submitToOneAndWait(new GenericExerciseTask("globalTearDown"));
     }
 
     private void submitToOneAndWait(Callable task) throws InterruptedException, ExecutionException {
@@ -190,6 +198,20 @@ public class Coach {
             set = parser.parse(args);
             Coach main = new Coach();
             main.setIsHeadCoach(set.has(isHeadCoachSpec));
+            if (main.isHeadCoach) {
+                MapExercise exercise = new MapExercise();
+                exercise.setThreadCount(2);
+                exercise.setKeyLength(100);
+                exercise.setValueLength(100);
+                exercise.setKeyCount(100);
+                exercise.setValueCount(100);
+
+                Workout workout = new Workout();
+                workout.addExercise(exercise);
+                workout.addExercise(exercise);
+                main.setWorkout(workout);
+            }
+
             main.setDurationSec(set.valueOf(durationSpec));
             main.setClientVmOptions(set.valueOf(clientVmOptionsSpec));
 
