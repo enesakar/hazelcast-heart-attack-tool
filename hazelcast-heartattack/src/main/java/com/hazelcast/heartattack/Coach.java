@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
-import com.hazelcast.heartattack.exercises.MapExercise;
 import com.hazelcast.heartattack.tasks.GenericExerciseTask;
 import com.hazelcast.heartattack.tasks.InitExerciseTask;
 import com.hazelcast.heartattack.tasks.ShutdownTask;
@@ -26,6 +25,7 @@ import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 import static com.hazelcast.heartattack.Utils.sleepSeconds;
+import static java.lang.String.format;
 
 public class Coach {
 
@@ -93,6 +93,13 @@ public class Coach {
     }
 
     private void run() throws InterruptedException, ExecutionException {
+        if (!isHeadCoach) {
+            System.out.println("Starting Assistant Coach");
+        } else {
+            System.out.println("Starting Head Coach");
+            System.out.println("Running %s ");
+        }
+
         this.coachHz = createCoachHazelcastInstance();
         this.coachExecutor = coachHz.getExecutorService("Coach:Executor");
 
@@ -101,18 +108,13 @@ public class Coach {
 
 
         if (!isHeadCoach) {
-            System.out.println("Starting assistant coach");
             awaitHeadCoachAvailable();
         } else {
-            System.out.println("Starting head coach");
-            System.out.println("traineeVmOptions: " + traineeVmOptions);
-
-
             signalHeadCoachAvailable();
 
-            log.info("Starting trainee Java Virtual Machines");
+            System.out.printf("Starting %s trainee Java Virtual Machines\n",traineeVmCount);
             submitToAllAndWait(coachExecutor, new SpawnTrainees(traineeVmCount, traineeVmOptions));
-            log.info("All trainee Java Virtual Machines have started");
+            System.out.println("All trainee Java Virtual Machines have started");
 
             for (Exercise exercise : workout.getExerciseList()) {
                 doExercise(exercise);
@@ -221,7 +223,7 @@ public class Coach {
             List<String> workoutFiles = set.nonOptionArguments();
             if (workoutFiles.size() == 1) {
                 workoutFileName = workoutFiles.get(0);
-            } else if(workoutFiles.size()>1){
+            } else if (workoutFiles.size() > 1) {
                 System.out.println("Too many workout files specified.");
                 System.exit(0);
             }
@@ -255,12 +257,7 @@ public class Coach {
         mapper.enableDefaultTyping();
         mapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
 
-        Collection<Exercise> exercises = mapper.readValue(parser, new TypeReference<Collection<Exercise>>() {
-        });
-
-        for (Exercise exercise : exercises) {
-            System.out.println(exercise.getClass());
-        }
+        Collection<Exercise> exercises = mapper.readValue(parser, new TypeReference<Collection<Exercise>>() {});
 
         Workout workout = new Workout();
         workout.getExerciseList().addAll(exercises);

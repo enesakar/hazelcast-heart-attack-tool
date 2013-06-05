@@ -38,8 +38,7 @@
                                 <descriptor>src/main/config/build-distribution-archive.xml</descriptor>
                             </descriptors>
                             <finalName>hazelcast-heartattack-${project.version}</finalName>
-                            <useProjectArtifact>false</useProjectArtifact>
-                        </configuration>
+                         </configuration>
                     </execution>
                 </executions>
             </plugin>

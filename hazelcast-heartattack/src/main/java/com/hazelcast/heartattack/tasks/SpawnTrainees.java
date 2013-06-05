@@ -32,7 +32,10 @@ public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceA
         Coach coach = (Coach) hz.getUserContext().get("Coach");
 
         String classpath = System.getProperty("java.class.path");
-        String[] clientVmOptionsArray = traineeVmOptions.split("\\s+");
+        String[] clientVmOptionsArray = new String[]{};
+        if (traineeVmOptions != null && !traineeVmOptions.trim().isEmpty()) {
+            clientVmOptionsArray = traineeVmOptions.split("\\s+");
+        }
 
         List<String> traineeIds = new LinkedList<String>();
 
@@ -53,11 +56,6 @@ public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceA
                     .start();
             new LoggingThread(traineeId, process.getInputStream()).start();
             new LoggingThread(traineeId, process.getErrorStream()).start();
-
-            //int exitCode = process.waitFor();
-            //if (exitCode != 0) {
-            //    throw new RuntimeException("Failed to spawn a new vm");
-            //}
         }
 
         for (String traineeId : traineeIds) {
