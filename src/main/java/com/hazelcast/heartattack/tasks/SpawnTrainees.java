@@ -18,13 +18,13 @@ import java.util.logging.Logger;
 public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceAware {
     private final static Logger log = Logger.getLogger(SpawnTrainees.class.getName());
 
-    private final String clientVmOptions;
+    private final String traineeVmOptions;
     private transient HazelcastInstance hz;
     private final int count;
 
-    public SpawnTrainees(int count, String clientVmOptions) {
+    public SpawnTrainees(int count, String traineeVmOptions) {
         this.count = count;
-        this.clientVmOptions = clientVmOptions;
+        this.traineeVmOptions = traineeVmOptions;
     }
 
     @Override
@@ -32,7 +32,7 @@ public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceA
         Coach coach = (Coach) hz.getUserContext().get("Coach");
 
         String classpath = System.getProperty("java.class.path");
-        String[] clientVmOptionsArray = clientVmOptions.split("\\s+");
+        String[] clientVmOptionsArray = traineeVmOptions.split("\\s+");
 
         List<String> traineeIds = new LinkedList<String>();
 

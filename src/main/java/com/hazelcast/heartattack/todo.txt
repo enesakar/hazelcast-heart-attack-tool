@@ -7,13 +7,13 @@ that will be listened to by the master and he will decide to kill
 
 - ability to configure the workouts. Currently it is hard coded.
 
-- currently we can only do a single workout, but it should be possible to run a whole bunch of workouts.
-
-- the number of machines started before running a workout is hard coded
-
 - a distribution of the heart attack tool
 
 DONE
+
+- currently we can only do a single workout, but it should be possible to run a whole bunch of workouts.
+
+- the number of machines started before running a workout is hard coded
 
 - should be easy to split up the tearDown in 2 phases, one is a master setup and the other one is a shared setup.
 

@@ -31,8 +31,9 @@ public class Coach {
     private final IExecutorService coachExecutor;
     private boolean isHeadCoach;
     private int durationSec;
-    private String clientVmOptions;
+    private String traineeVmOptions;
     private Workout workout;
+    private int traineeVmCount;
 
     public Coach() throws ExecutionException, InterruptedException {
         this.coachHz = createCoachHazelcastInstance();
@@ -70,12 +71,20 @@ public class Coach {
         return durationSec;
     }
 
-    public void setClientVmOptions(String clientVmOptions) {
-        this.clientVmOptions = clientVmOptions;
+    public void setTraineeVmOptions(String traineeVmOptions) {
+        this.traineeVmOptions = traineeVmOptions;
     }
 
-    public String getClientVmOptions() {
-        return clientVmOptions;
+    public String getTraineeVmOptions() {
+        return traineeVmOptions;
+    }
+
+    public void setTraineeVmCount(int traineeCount) {
+        this.traineeVmCount = traineeCount;
+    }
+
+    public int getTraineeVmCount() {
+        return traineeVmCount;
     }
 
     private HazelcastInstance createCoachHazelcastInstance() {
@@ -91,13 +100,13 @@ public class Coach {
             awaitHeadCoachAvailable();
         } else {
             System.out.println("Starting head coach");
-            System.out.println("clientVmOptions: " + clientVmOptions);
+            System.out.println("traineeVmOptions: " + traineeVmOptions);
 
 
             signalHeadCoachAvailable();
 
             log.info("Starting trainee Java Virtual Machines");
-            submitToAllAndWait(coachExecutor, new SpawnTrainees(1, clientVmOptions));
+            submitToAllAndWait(coachExecutor, new SpawnTrainees(traineeVmCount, traineeVmOptions));
             log.info("All trainee Java Virtual Machines have started");
 
             for (Exercise exercise : workout.getExerciseList()) {
@@ -121,9 +130,9 @@ public class Coach {
 
         submitToAllAndWait(traineeExecutor, new GenericExerciseTask("stop"));
 
-        submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localVerify"));
-
         submitToOneAndWait(new GenericExerciseTask("globalVerify"));
+
+        submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localVerify"));
 
         submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localTearDown"));
 
@@ -184,9 +193,11 @@ public class Coach {
         System.out.println("Hazelcast Heart Attack Coach");
 
         OptionParser parser = new OptionParser();
-        OptionSpec<Integer> durationSpec = parser.accepts("duration", "Number of seconds to run (defaults to 60 seconds)")
+        OptionSpec<Integer> durationSpec = parser.accepts("duration", "Number of seconds to run)")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(60);
-        OptionSpec<String> clientVmOptionsSpec = parser.accepts("clientVmOptions", "Client VM options (quotes can be used)")
+        OptionSpec<Integer> traineeCountSpec = parser.accepts("traineeVmCount", "Number of Trainee VM's per Coach")
+                .withRequiredArg().ofType(Integer.class).defaultsTo(4);
+        OptionSpec<String> traineeVmOptionsSpec = parser.accepts("traineeVmOptions", "Trainee VM options (quotes can be used)")
                 .withRequiredArg().ofType(String.class).defaultsTo("");
         OptionSpec isHeadCoachSpec =
                 parser.accepts("headCoach", "If the node is a head coach");
@@ -196,6 +207,11 @@ public class Coach {
         OptionSet set;
         try {
             set = parser.parse(args);
+            if (set.has(helpSpec)) {
+                parser.printHelpOn(System.out);
+                System.exit(0);
+            }
+
             Coach main = new Coach();
             main.setIsHeadCoach(set.has(isHeadCoachSpec));
             if (main.isHeadCoach) {
@@ -213,7 +229,8 @@ public class Coach {
             }
 
             main.setDurationSec(set.valueOf(durationSpec));
-            main.setClientVmOptions(set.valueOf(clientVmOptionsSpec));
+            main.setTraineeVmOptions(set.valueOf(traineeVmOptionsSpec));
+            main.setTraineeVmCount(set.valueOf(traineeCountSpec));
 
             main.run();
         } catch (OptionException e) {
@@ -221,4 +238,6 @@ public class Coach {
             System.exit(1);
         }
     }
+
+
 }

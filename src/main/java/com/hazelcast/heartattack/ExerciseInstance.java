@@ -1,15 +1,55 @@
 package com.hazelcast.heartattack;
 
+
+/**
+ * Order of lifecycle methods:
+ * <ol>
+ * <li>{@link #globalSetup()}</li>
+ * <li>{@link #localSetup()}</li>
+ * <li>{@link #start()}</li>
+ * <li>{@link #stop()}</li>
+ * <li>{@link #localVerify()}</li>
+ * <li>{@link #globalVerify()}</li>
+ * <li>{@link #globalTearDown()}</li>
+ * <li>{@link #localTearDown()}</li>
+ * </ol>
+ */
 public interface ExerciseInstance {
 
-    //will only be called on a single member in the cluster
+    /**
+     * Sets up this ExerciseInstance
+     * <p/>
+     * This method will only be called on a single members of the cluster.
+     *
+     * @throws Exception
+     */
     void globalSetup() throws Exception;
 
+    /**
+     * Sets up this ExerciseInstance
+     * <p/>
+     * This method will be called on a all members of the cluster.
+     *
+     * @throws Exception
+     */
     void localSetup() throws Exception;
 
+    /**
+     * Tears down this ExerciseInstance
+     * <p/>
+     * This method will  be called on a all members of the cluster.
+     *
+     * @throws Exception
+     */
     void localTearDown() throws Exception;
 
-    //will only be called on a single member in the cluster
+    /**
+     * Tears down this ExerciseInstance
+     * <p/>
+     * This method will only be called on a single member of the cluster.
+     *
+     * @throws Exception
+     */
     void globalTearDown() throws Exception;
 
     void start() throws Exception;

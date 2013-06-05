@@ -25,7 +25,7 @@ public class InitExerciseTask implements Callable, Serializable, HazelcastInstan
         try {
             log.info("Init Exercise");
             ExerciseInstance exerciseInstance = exercise.newInstance(hz);
-            hz.getUserContext().put("exercise", exerciseInstance);
+            hz.getUserContext().put("exerciseInstance", exerciseInstance);
             return null;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed to init Exercise", e);

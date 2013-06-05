@@ -5,12 +5,20 @@ import com.hazelcast.heartattack.AbstractExerciseInstance;
 import com.hazelcast.heartattack.ExerciseInstance;
 import com.hazelcast.heartattack.Exercise;
 
+import java.util.UUID;
+
 public abstract class AbstractExercise implements Exercise {
 
     private final String clazzName;
+    private final String id = UUID.randomUUID().toString();
 
     public AbstractExercise(Class<? extends AbstractExerciseInstance> clazz) {
         clazzName = clazz.getName();
+    }
+
+    @Override
+    public String getId() {
+        return id;
     }
 
     @Override

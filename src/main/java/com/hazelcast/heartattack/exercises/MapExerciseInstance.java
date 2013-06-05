@@ -51,11 +51,6 @@ public class MapExerciseInstance extends AbstractExerciseInstance<MapExercise> {
         map = null;
     }
 
-    @Override
-    public void localVerify() throws Exception {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
     private class Worker implements Runnable {
         private final Random random = new Random();
 
