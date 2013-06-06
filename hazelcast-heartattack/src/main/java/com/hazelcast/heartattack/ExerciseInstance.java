@@ -19,6 +19,8 @@ package com.hazelcast.heartattack;
  */
 public interface ExerciseInstance {
 
+    public static final String EXERCISE_INSTANCE = "exerciseInstance";
+
     /**
      * Sets up this ExerciseInstance
      * <p/>

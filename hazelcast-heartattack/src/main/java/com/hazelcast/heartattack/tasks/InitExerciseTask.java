@@ -2,8 +2,8 @@ package com.hazelcast.heartattack.tasks;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.heartattack.ExerciseInstance;
 import com.hazelcast.heartattack.Exercise;
+import com.hazelcast.heartattack.ExerciseInstance;
 
 import java.io.Serializable;
 import java.util.concurrent.Callable;
@@ -25,7 +25,7 @@ public class InitExerciseTask implements Callable, Serializable, HazelcastInstan
         try {
             log.info("Init Exercise");
             ExerciseInstance exerciseInstance = exercise.newInstance(hz);
-            hz.getUserContext().put("exerciseInstance", exerciseInstance);
+            hz.getUserContext().put(ExerciseInstance.EXERCISE_INSTANCE, exerciseInstance);
             return null;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed to init Exercise", e);

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.hazelcast.heartattack.Utils.sleepSeconds;
@@ -92,12 +93,13 @@ public class Coach {
         return Hazelcast.newHazelcastInstance(config);
     }
 
-    private void run() throws InterruptedException, ExecutionException {
+    private void start() throws InterruptedException, ExecutionException {
         if (!isHeadCoach) {
             System.out.println("Starting Assistant Coach");
         } else {
             System.out.println("Starting Head Coach");
-            System.out.println("Running %s ");
+            System.out.printf("Running %s exercises.\n", workout.size());
+            System.out.printf("Trainee's per JVM: %s.\n", traineeVmCount);
         }
 
         this.coachHz = createCoachHazelcastInstance();
@@ -112,9 +114,11 @@ public class Coach {
         } else {
             signalHeadCoachAvailable();
 
-            System.out.printf("Starting %s trainee Java Virtual Machines\n",traineeVmCount);
+            log.info(format("Starting %s trainee Java Virtual Machines", traineeVmCount));
+            long startMs = System.currentTimeMillis();
             submitToAllAndWait(coachExecutor, new SpawnTrainees(traineeVmCount, traineeVmOptions));
-            System.out.println("All trainee Java Virtual Machines have started");
+            long durationMs = System.currentTimeMillis() - startMs;
+            log.info(format("Trainee Java Virtual Machines have started after %s ms\n", durationMs));
 
             for (Exercise exercise : workout.getExerciseList()) {
                 doExercise(exercise);
@@ -124,26 +128,40 @@ public class Coach {
         }
     }
 
-    private void doExercise(Exercise exercise) throws InterruptedException, ExecutionException {
-        submitToAllAndWait(traineeExecutor, new InitExerciseTask(exercise));
+    private void doExercise(Exercise exercise) {
+        try {
+            log.info("Exercise initializing");
+            submitToAllAndWait(traineeExecutor, new InitExerciseTask(exercise));
 
-        submitToOneAndWait(new GenericExerciseTask("globalSetup"));
+            log.info("Exercise global setup");
+            submitToOneAndWait(new GenericExerciseTask("globalSetup"));
 
-        submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localSetup"));
+            log.info("Exercise local setup");
+            submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localSetup"));
 
-        submitToAllAndWait(traineeExecutor, new GenericExerciseTask("start"));
+            log.info("Exercise task");
+            submitToAllAndWait(traineeExecutor, new GenericExerciseTask("start"));
 
-        sleepSeconds(durationSec);
+            log.info(format("Exercise running for %s seconds", durationSec));
+            sleepSeconds(durationSec);
 
-        submitToAllAndWait(traineeExecutor, new GenericExerciseTask("stop"));
+            log.info("Exercise stop");
+            submitToAllAndWait(traineeExecutor, new GenericExerciseTask("stop"));
 
-        submitToOneAndWait(new GenericExerciseTask("globalVerify"));
+            log.info("Exercise global verify");
+            submitToOneAndWait(new GenericExerciseTask("globalVerify"));
 
-        submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localVerify"));
+            log.info("Exercise local verify");
+            submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localVerify"));
 
-        submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localTearDown"));
+            log.info("Exercise local tear down");
+            submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localTearDown"));
 
-        submitToOneAndWait(new GenericExerciseTask("globalTearDown"));
+            log.info("Exercise global tear down");
+            submitToOneAndWait(new GenericExerciseTask("globalTearDown"));
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Failed",e);
+        }
     }
 
     private void submitToOneAndWait(Callable task) throws InterruptedException, ExecutionException {
@@ -200,7 +218,7 @@ public class Coach {
         System.out.println("Hazelcast Heart Attack Coach");
 
         OptionParser parser = new OptionParser();
-        OptionSpec<Integer> durationSpec = parser.accepts("duration", "Number of seconds to run)")
+        OptionSpec<Integer> durationSpec = parser.accepts("duration", "Number of seconds to start)")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(60);
         OptionSpec<Integer> traineeCountSpec = parser.accepts("traineeVmCount", "Number of Trainee VM's per Coach")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(4);
@@ -228,20 +246,19 @@ public class Coach {
                 System.exit(0);
             }
 
+            Coach coach = new Coach();
+            coach.setIsHeadCoach(set.has(isHeadCoachSpec));
 
-            Coach main = new Coach();
-            main.setIsHeadCoach(set.has(isHeadCoachSpec));
-
-            if (main.isHeadCoach) {
+            if (coach.isHeadCoach) {
                 File workoutJsonFile = new File(workoutFileName);
                 Workout workout = createWorkout(workoutJsonFile);
-                main.setWorkout(workout);
-                main.setDurationSec(set.valueOf(durationSpec));
-                main.setTraineeVmOptions(set.valueOf(traineeVmOptionsSpec));
-                main.setTraineeVmCount(set.valueOf(traineeCountSpec));
+                coach.setWorkout(workout);
+                coach.setDurationSec(set.valueOf(durationSpec));
+                coach.setTraineeVmOptions(set.valueOf(traineeVmOptionsSpec));
+                coach.setTraineeVmCount(set.valueOf(traineeCountSpec));
             }
 
-            main.run();
+            coach.start();
         } catch (OptionException e) {
             System.out.println(e.getMessage() + ". Use --help to get overview of the help options.");
             System.exit(1);
@@ -257,7 +274,8 @@ public class Coach {
         mapper.enableDefaultTyping();
         mapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
 
-        Collection<Exercise> exercises = mapper.readValue(parser, new TypeReference<Collection<Exercise>>() {});
+        Collection<Exercise> exercises = mapper.readValue(parser, new TypeReference<Collection<Exercise>>() {
+        });
 
         Workout workout = new Workout();
         workout.getExerciseList().addAll(exercises);

@@ -5,8 +5,12 @@ import com.hazelcast.core.HazelcastInstance;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public abstract class AbstractExerciseInstance<E extends Exercise> implements ExerciseInstance {
+
+    private final static Logger log = Logger.getLogger(AbstractExerciseInstance.class.getName());
 
     protected HazelcastInstance hazelcastInstance;
     protected E exercise;
@@ -77,7 +81,7 @@ public abstract class AbstractExerciseInstance<E extends Exercise> implements Ex
                 System.out.println(Thread.currentThread().getName() + " Starting");
                 runnable.run();
             } catch (Throwable t) {
-                t.printStackTrace();
+                log.log(Level.SEVERE, "Error detected", t);
             }
         }
     }

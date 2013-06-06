@@ -16,10 +16,10 @@ public class AtomicLongExerciseInstance extends AbstractExerciseInstance<AtomicL
 
     @Override
     public void localSetup() {
-        totalCounter = hazelcastInstance.getAtomicLong("AtomicLongExercise-totalCounter");
+        totalCounter = hazelcastInstance.getAtomicLong(getExercise().getId() + ":TotalCounter");
         counters = new IAtomicLong[exercise.getCountersLength()];
         for (int k = 0; k < counters.length; k++) {
-            counters[k] = hazelcastInstance.getAtomicLong("AtomicLongExercise-counter-" + k);
+            counters[k] = hazelcastInstance.getAtomicLong(getExercise().getId() + ":Counter-" + k);
         }
 
         for (int k = 0; k < exercise.getThreadCount(); k++) {
@@ -41,14 +41,11 @@ public class AtomicLongExerciseInstance extends AbstractExerciseInstance<AtomicL
     }
 
     @Override
-    public void localTearDown() {
-        totalCounter.destroy();
-        totalCounter = null;
-
+    public void globalTearDown() throws Exception {
         for (IAtomicLong counter : counters) {
             counter.destroy();
         }
-        counters = null;
+        totalCounter.destroy();
     }
 
     private class Worker implements Runnable {
@@ -61,7 +58,7 @@ public class AtomicLongExerciseInstance extends AbstractExerciseInstance<AtomicL
                 int index = random.nextInt(counters.length);
                 counters[index].incrementAndGet();
                 if (iteration % 10000 == 0) {
-                    System.out.println(Thread.currentThread().getName() + " At iteration: " + iteration);
+                    log.info(Thread.currentThread().getName() + " At iteration: " + iteration);
                 }
                 iteration++;
             }

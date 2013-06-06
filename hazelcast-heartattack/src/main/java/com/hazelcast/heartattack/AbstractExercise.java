@@ -1,10 +1,7 @@
-package com.hazelcast.heartattack.exercises;
+package com.hazelcast.heartattack;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.heartattack.AbstractExerciseInstance;
-import com.hazelcast.heartattack.ExerciseInstance;
-import com.hazelcast.heartattack.Exercise;
 
 import java.util.UUID;
 

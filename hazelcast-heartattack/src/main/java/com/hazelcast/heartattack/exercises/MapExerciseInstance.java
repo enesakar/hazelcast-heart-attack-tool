@@ -19,7 +19,7 @@ public class MapExerciseInstance extends AbstractExerciseInstance<MapExercise> {
 
     @Override
     public void localSetup() throws Exception {
-        map = hazelcastInstance.getMap("MapExercise:map");
+        map = hazelcastInstance.getMap(getExercise().getId() + ":Map");
         for (int k = 0; k < exercise.getThreadCount(); k++) {
             spawn(new Worker());
         }
@@ -46,9 +46,8 @@ public class MapExerciseInstance extends AbstractExerciseInstance<MapExercise> {
     }
 
     @Override
-    public void localTearDown() throws Exception {
+    public void globalTearDown() throws Exception {
         map.destroy();
-        map = null;
     }
 
     private class Worker implements Runnable {
@@ -63,7 +62,7 @@ public class MapExerciseInstance extends AbstractExerciseInstance<MapExercise> {
                 Object value = values[random.nextInt(values.length)];
                 map.put(key, value);
                 if (iteration % 10000 == 0) {
-                    System.out.println(Thread.currentThread().getName() + " At iteration: " + iteration);
+                    log.info(Thread.currentThread().getName() + " At iteration: " + iteration);
                 }
                 iteration++;
             }

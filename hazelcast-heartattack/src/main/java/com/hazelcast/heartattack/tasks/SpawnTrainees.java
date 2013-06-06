@@ -81,6 +81,7 @@ public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceA
             if (traineeParticipantMap.containsKey(id)) {
                 traineeParticipantMap.remove(id);
                 found = true;
+                break;
             } else {
                 Utils.sleepSeconds(1);
             }

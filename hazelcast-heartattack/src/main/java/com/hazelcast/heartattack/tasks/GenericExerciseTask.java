@@ -28,7 +28,7 @@ public class GenericExerciseTask implements Callable, Serializable, HazelcastIns
         try {
             log.info("Calling exerciseInstance." + methodName + "()");
 
-            ExerciseInstance exerciseInstance = (ExerciseInstance) hz.getUserContext().get("exerciseInstance");
+            ExerciseInstance exerciseInstance = (ExerciseInstance) hz.getUserContext().get(ExerciseInstance.EXERCISE_INSTANCE);
             if (exerciseInstance != null) {
                 Method method = exerciseInstance.getClass().getMethod(methodName);
                 method.invoke(exerciseInstance);

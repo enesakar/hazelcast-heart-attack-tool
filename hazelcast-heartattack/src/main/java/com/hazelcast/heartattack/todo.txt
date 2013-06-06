@@ -9,9 +9,13 @@ that will be listened to by the master and he will decide to kill
 
 - coach needs to log into log dir.
 
-DONE
-
 - log configuration for coach needs to be pulled out.
+
+- configuration of hazelcast.xml file for coach
+
+- configuration of hazelcast.xml file for trainee
+
+DONE
 
 - a distribution of the heart attack tool
 

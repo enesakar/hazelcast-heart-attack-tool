@@ -1,5 +1,7 @@
 package com.hazelcast.heartattack.exercises;
 
+import com.hazelcast.heartattack.AbstractExercise;
+
 public class AtomicLongExercise extends AbstractExercise {
 
     private int countersLength = 1000;

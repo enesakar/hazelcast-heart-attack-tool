@@ -15,4 +15,8 @@ public class Workout {
     public List<Exercise> getExerciseList() {
         return exerciseList;
     }
+
+    public int size(){
+        return exerciseList.size();
+    }
 }

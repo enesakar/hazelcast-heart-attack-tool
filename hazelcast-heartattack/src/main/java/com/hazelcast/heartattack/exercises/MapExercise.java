@@ -1,5 +1,7 @@
 package com.hazelcast.heartattack.exercises;
 
+import com.hazelcast.heartattack.AbstractExercise;
+
 public class MapExercise extends AbstractExercise {
 
     public int threadCount = 10;
