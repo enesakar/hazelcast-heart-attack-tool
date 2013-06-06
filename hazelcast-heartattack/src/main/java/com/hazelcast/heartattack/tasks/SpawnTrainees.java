@@ -13,7 +13,10 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.Callable;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static java.lang.String.format;
 
 public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceAware {
     private final static Logger log = Logger.getLogger(SpawnTrainees.class.getName());
@@ -29,47 +32,52 @@ public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceA
 
     @Override
     public Object call() throws Exception {
-        Coach coach = (Coach) hz.getUserContext().get("Coach");
+        try {
+            Coach coach = (Coach) hz.getUserContext().get("Coach");
 
-        String classpath = System.getProperty("java.class.path");
-        String[] clientVmOptionsArray = new String[]{};
-        if (traineeVmOptions != null && !traineeVmOptions.trim().isEmpty()) {
-            clientVmOptionsArray = traineeVmOptions.split("\\s+");
+            String classpath = System.getProperty("java.class.path");
+            String[] clientVmOptionsArray = new String[]{};
+            if (traineeVmOptions != null && !traineeVmOptions.trim().isEmpty()) {
+                clientVmOptionsArray = traineeVmOptions.split("\\s+");
+            }
+
+            List<String> traineeIds = new LinkedList<String>();
+
+            for (int k = 0; k < count; k++) {
+                String traineeId = UUID.randomUUID().toString();
+                traineeIds.add(traineeId);
+
+                List<String> args = new LinkedList<String>();
+                args.add("java");
+                args.add("-cp");
+                args.add(classpath);
+                args.addAll(Arrays.asList(clientVmOptionsArray));
+                args.add(Trainee.class.getName());
+                args.add(traineeId);
+
+                Process process = new ProcessBuilder(args.toArray(new String[args.size()]))
+                        .directory(new File(System.getProperty("user.dir")))
+                        .start();
+                new LoggingThread(traineeId, process.getInputStream()).start();
+                new LoggingThread(traineeId, process.getErrorStream()).start();
+            }
+
+            for (String traineeId : traineeIds) {
+                waitForTraineeStartup(coach, traineeId);
+            }
+
+            return null;
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Failed to spawn Trainee Virtual Machines",e);
+            throw e;
         }
-
-        List<String> traineeIds = new LinkedList<String>();
-
-        for (int k = 0; k < count; k++) {
-            String traineeId = UUID.randomUUID().toString();
-            traineeIds.add(traineeId);
-
-            List<String> args = new LinkedList<String>();
-            args.add("java");
-            args.add("-cp");
-            args.add(classpath);
-            args.addAll(Arrays.asList(clientVmOptionsArray));
-            args.add(Trainee.class.getName());
-            args.add(traineeId);
-
-            Process process = new ProcessBuilder(args.toArray(new String[args.size()]))
-                    .directory(new File(System.getProperty("user.dir")))
-                    .start();
-            new LoggingThread(traineeId, process.getInputStream()).start();
-            new LoggingThread(traineeId, process.getErrorStream()).start();
-        }
-
-        for (String traineeId : traineeIds) {
-            waitForTraineeStartup(coach, traineeId);
-        }
-
-        return null;
     }
 
     private void waitForTraineeStartup(Coach coach, String id) throws InterruptedException {
         IMap<String, String> traineeParticipantMap = coach.getTraineeHazelcastInstance().getMap(Trainee.TRAINEE_PARTICIPANT_MAP);
 
         boolean found = false;
-        for (int l = 0; l < 30; l++) {
+        for (int l = 0; l < 180; l++) {
             if (traineeParticipantMap.containsKey(id)) {
                 traineeParticipantMap.remove(id);
                 found = true;
@@ -79,7 +87,7 @@ public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceA
         }
 
         if (!found) {
-            throw new RuntimeException();
+            throw new RuntimeException(format("Trainee %s didn't start up in time", id));
         } else {
             log.info("Trainee: " + id + " Started");
         }

@@ -5,9 +5,15 @@ that will be listened to by the master and he will decide to kill
 
 - trainee vm's need to write to a unique logfile (probably give them a different working directory)
 
-- a distribution of the heart attack tool
+- log configuration for trainee needs to be pulled out.
+
+- coach needs to log into log dir.
 
 DONE
+
+- log configuration for coach needs to be pulled out.
+
+- a distribution of the heart attack tool
 
 - loading workout: the file should be configurable
 
