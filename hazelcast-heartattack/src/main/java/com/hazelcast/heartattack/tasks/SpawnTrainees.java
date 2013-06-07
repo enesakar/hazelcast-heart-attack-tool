@@ -68,7 +68,7 @@ public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceA
 
             return null;
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to spawn Trainee Virtual Machines",e);
+            log.log(Level.SEVERE, "Failed to spawn Trainee Virtual Machines", e);
             throw e;
         }
     }
