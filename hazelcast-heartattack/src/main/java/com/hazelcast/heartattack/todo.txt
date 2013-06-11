@@ -3,19 +3,29 @@ TODO
 - heart attack indicator; when a worker thread throws an exception, it should be posted on a central topic
 that will be listened to by the master and he will decide to kill
 
-- trainee vm's need to write to a unique logfile (probably give them a different working directory)
-
-- log configuration for trainee needs to be pulled out.
-
 - coach needs to log into log dir.
-
-- log configuration for coach needs to be pulled out.
 
 - configuration of hazelcast.xml file for coach
 
 - configuration of hazelcast.xml file for trainee
 
+- mechanism for killing trainees
+
+- mechanism for adding trainees
+
+- problem; because the coach also starts a trainee-hz, it will participate as trainee. This is no good.
+So instead of having a trainee hz on each coach, probably better to have a coach instance on each trainee.
+
 DONE
+
+
+- option to see the trainee logging within the coach
+
+- trainee vm's need to write to a unique logfile (probably give them a different working directory)
+
+- log configuration for trainee needs to be pulled out.
+
+- log configuration for coach needs to be pulled out.
 
 - a distribution of the heart attack tool
 

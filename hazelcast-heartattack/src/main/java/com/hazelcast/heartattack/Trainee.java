@@ -32,14 +32,18 @@ public class Trainee {
     public static HazelcastInstance createHazelcastInstance() {
         Config config = new Config();
         config.getGroupConfig().setName(Trainee.TRAINEE_GROUP);
+        config.getGroupConfig().setPassword("password");
+        config.getNetworkConfig().setPort(6701);
         return Hazelcast.newHazelcastInstance(config);
     }
 
     public static void main(String[] args) {
-        System.out.println("Hazelcast Heart Attack Trainee Started");
+        log.info("Starting Hazelcast Heart Attack Trainee");
 
         String traineeId = args[0];
         Trainee trainee = new Trainee(traineeId);
         trainee.start();
+
+        log.info("Successfully started Hazelcast Heart Attack Trainee");
     }
 }

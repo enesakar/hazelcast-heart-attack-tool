@@ -4,6 +4,8 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
 import com.hazelcast.heartattack.tasks.GenericExerciseTask;
@@ -40,6 +42,7 @@ public class HeadCoach implements Coach {
     private String traineeVmOptions;
     private Workout workout;
     private int traineeVmCount;
+    private boolean traineeTrackLogging;
 
     public void setWorkout(Workout workout) {
         this.workout = workout;
@@ -50,11 +53,30 @@ public class HeadCoach implements Coach {
     }
 
     public HazelcastInstance getTraineeHazelcastInstance() {
+        //nasty hack
+
+        if(traineeHz == null){
+            ClientConfig clientConfig = new ClientConfig().addAddress("localhost:6701");
+            clientConfig.getGroupConfig()
+                    .setName(Trainee.TRAINEE_GROUP)
+                    .setPassword("password");
+            traineeHz = HazelcastClient.newHazelcastClient(clientConfig);
+            traineeExecutor = traineeHz.getExecutorService(Trainee.TRAINEE_EXECUTOR);
+        }
+
         return traineeHz;
     }
 
     public void setDurationSec(Integer durationSec) {
         this.durationSec = durationSec;
+    }
+
+    public boolean isTraineeTrackLogging() {
+        return traineeTrackLogging;
+    }
+
+    public void setTraineeTrackLogging(boolean traineeTrackLogging) {
+        this.traineeTrackLogging = traineeTrackLogging;
     }
 
     public int getDurationSec() {
@@ -86,21 +108,20 @@ public class HeadCoach implements Coach {
 
     private void start() throws InterruptedException, ExecutionException {
         System.out.printf("Exercises: %s\n", workout.size());
-        System.out.printf("Expected running time: %s seconds\n",workout.size()*durationSec);
+        System.out.printf("Expected running time: %s seconds\n", workout.size() * durationSec);
         System.out.printf("Trainee's per coach: %s.\n", traineeVmCount);
+        System.out.printf("Trainee track logging: %s.\n", traineeVmCount);
 
         long startMs = System.currentTimeMillis();
 
-        this.coachHz = createCoachHazelcastInstance();
-        this.coachExecutor = coachHz.getExecutorService("Coach:Executor");
-
-        this.traineeHz = Trainee.createHazelcastInstance();
-        this.traineeExecutor = traineeHz.getExecutorService(Trainee.TRAINEE_EXECUTOR);
+        coachHz = createCoachHazelcastInstance();
+        coachExecutor = coachHz.getExecutorService("Coach:Executor");
 
         signalHeadCoachAvailable();
 
         log.info(format("Starting %s trainee Java Virtual Machines", traineeVmCount));
-        submitToAllAndWait(coachExecutor, new SpawnTrainees(traineeVmCount, traineeVmOptions));
+        submitToAllAndWait(coachExecutor, new SpawnTrainees(traineeVmCount, traineeVmOptions, traineeTrackLogging));
+
         long durationMs = System.currentTimeMillis() - startMs;
         log.info(format("Trainee Java Virtual Machines have started after %s ms\n", durationMs));
 
@@ -110,8 +131,8 @@ public class HeadCoach implements Coach {
 
         submitToAllAndWait(traineeExecutor, new ShutdownTask());
 
-        long elapsedMs = System.currentTimeMillis()-startMs;
-        System.out.printf("Total running time: %s\n",elapsedMs/1000);
+        long elapsedMs = System.currentTimeMillis() - startMs;
+        System.out.printf("Total running time: %s\n", elapsedMs / 1000);
     }
 
     private void doExercise(Exercise exercise) {
@@ -185,12 +206,12 @@ public class HeadCoach implements Coach {
         OptionParser parser = new OptionParser();
         OptionSpec<Integer> durationSpec = parser.accepts("duration", "Number of seconds to start)")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(60);
+        OptionSpec traineeTrackLoggingSpec = parser.accepts("traineeTrackLogging", "If the coach is tracking trainee logging");
         OptionSpec<Integer> traineeCountSpec = parser.accepts("traineeVmCount", "Number of Trainee VM's per Coach")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(1);
         OptionSpec<String> traineeVmOptionsSpec = parser.accepts("traineeVmOptions", "Trainee VM options (quotes can be used)")
                 .withRequiredArg().ofType(String.class).defaultsTo("");
-        OptionSpec helpSpec =
-                parser.accepts("help", "Show help").forHelp();
+        OptionSpec helpSpec = parser.accepts("help", "Show help").forHelp();
 
         OptionSet set;
         try {
@@ -206,14 +227,14 @@ public class HeadCoach implements Coach {
                 workoutFileName = workoutFiles.get(0);
             } else if (workoutFiles.size() > 1) {
                 System.out.println("Too many workout files specified.");
-                System.exit(0);
+                System.exit(1);
             }
 
-            HeadCoach coach = new HeadCoach();
+            Workout workout = createWorkout(new File(workoutFileName));
 
-            File workoutJsonFile = new File(workoutFileName);
-            Workout workout = createWorkout(workoutJsonFile);
+            HeadCoach coach = new HeadCoach();
             coach.setWorkout(workout);
+            coach.setTraineeTrackLogging(set.has(traineeTrackLoggingSpec));
             coach.setDurationSec(set.valueOf(durationSpec));
             coach.setTraineeVmOptions(set.valueOf(traineeVmOptionsSpec));
             coach.setTraineeVmCount(set.valueOf(traineeCountSpec));

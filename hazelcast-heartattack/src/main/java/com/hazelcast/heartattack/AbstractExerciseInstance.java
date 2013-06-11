@@ -76,9 +76,7 @@ public abstract class AbstractExerciseInstance<E extends Exercise> implements Ex
         @Override
         public void run() {
             try {
-                System.out.println(Thread.currentThread().getName() + " Waiting");
                 startLatch.await();
-                System.out.println(Thread.currentThread().getName() + " Starting");
                 runnable.run();
             } catch (Throwable t) {
                 log.log(Level.SEVERE, "Error detected", t);
@@ -88,7 +86,6 @@ public abstract class AbstractExerciseInstance<E extends Exercise> implements Ex
 
     @Override
     public void start() {
-        System.out.println("Start called");
         startLatch.countDown();
     }
 

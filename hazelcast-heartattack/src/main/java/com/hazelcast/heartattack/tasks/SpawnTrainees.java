@@ -22,12 +22,14 @@ public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceA
     private final static Logger log = Logger.getLogger(SpawnTrainees.class.getName());
 
     private final String traineeVmOptions;
+    private final boolean traineeTrackLogging;
     private transient HazelcastInstance hz;
-    private final int count;
+    private final int traineeVmCount;
 
-    public SpawnTrainees(int count, String traineeVmOptions) {
-        this.count = count;
+    public SpawnTrainees(int traineeVmCount, String traineeVmOptions, boolean traineeTrackLogging) {
+        this.traineeVmCount = traineeVmCount;
         this.traineeVmOptions = traineeVmOptions;
+        this.traineeTrackLogging = traineeTrackLogging;
     }
 
     @Override
@@ -42,25 +44,39 @@ public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceA
             }
 
             List<String> traineeIds = new LinkedList<String>();
+            String heartAttackHome = System.getenv("HEART_ATTACK_HOME");
 
-            for (int k = 0; k < count; k++) {
+            for (int k = 0; k < traineeVmCount; k++) {
                 String traineeId = UUID.randomUUID().toString();
                 traineeIds.add(traineeId);
 
                 List<String> args = new LinkedList<String>();
                 args.add("java");
+                args.add(format("-Djava.util.logging.config.file=%s/conf/trainee-logging.properties", heartAttackHome));
                 args.add("-cp");
                 args.add(classpath);
                 args.addAll(Arrays.asList(clientVmOptionsArray));
                 args.add(Trainee.class.getName());
                 args.add(traineeId);
 
+                File userDir = new File(System.getProperty("user.dir"));
+                File traineeDir = new File(userDir, "trainees");
+                File targetDir = new File(traineeDir, traineeId);
+                if (!targetDir.mkdirs()) {
+                    throw new RuntimeException("Could not create target directory: " + targetDir.getAbsolutePath());
+                }
+
                 Process process = new ProcessBuilder(args.toArray(new String[args.size()]))
-                        .directory(new File(System.getProperty("user.dir")))
+                        .directory(targetDir)
                         .start();
-                new LoggingThread(traineeId, process.getInputStream()).start();
-                new LoggingThread(traineeId, process.getErrorStream()).start();
+
+                if (traineeTrackLogging) {
+                    new LoggingThread(traineeId, process.getInputStream()).start();
+                    new LoggingThread(traineeId, process.getErrorStream()).start();
+                }
             }
+
+            Utils.sleepSeconds(20);
 
             for (String traineeId : traineeIds) {
                 waitForTraineeStartup(coach, traineeId);
@@ -116,11 +132,10 @@ public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceA
                 for (; ; ) {
                     final String line = br.readLine();
                     if (line == null) break;
-                    System.out.println(prefix + ": " + line);
+                    log.info(prefix + ": " + line);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                ;
                 // log.log(Level.SEVERE, "Failed to log", e);
             }
         }
