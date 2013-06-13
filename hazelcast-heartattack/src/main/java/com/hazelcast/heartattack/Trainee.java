@@ -4,12 +4,14 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
-import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class Trainee {
 
-    private final static Logger log = Logger.getLogger(Trainee.class.getName());
+    final static ILogger log = Logger.getLogger(Trainee.class.getName());
 
     public static final String TRAINEE_PARTICIPANT_MAP = "Trainee:ParticipantMap";
     public static final String TRAINEE_EXECUTOR = "Trainee:Executor";
@@ -38,12 +40,12 @@ public class Trainee {
     }
 
     public static void main(String[] args) {
-        log.info("Starting Hazelcast Heart Attack Trainee");
+        log.log(Level.INFO, "Starting Hazelcast Heart Attack Trainee");
 
         String traineeId = args[0];
         Trainee trainee = new Trainee(traineeId);
         trainee.start();
 
-        log.info("Successfully started Hazelcast Heart Attack Trainee");
+        log.log(Level.INFO, "Successfully started Hazelcast Heart Attack Trainee");
     }
 }

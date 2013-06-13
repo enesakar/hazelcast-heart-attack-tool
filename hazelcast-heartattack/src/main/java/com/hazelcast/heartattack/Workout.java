@@ -7,7 +7,6 @@ public class Workout {
 
     private List<Exercise> exerciseList = new LinkedList<Exercise>();
 
-
     public void addExercise(Exercise exercise) {
         exerciseList.add(exercise);
     }
@@ -16,7 +15,7 @@ public class Workout {
         return exerciseList;
     }
 
-    public int size(){
+    public int size() {
         return exerciseList.size();
     }
 }

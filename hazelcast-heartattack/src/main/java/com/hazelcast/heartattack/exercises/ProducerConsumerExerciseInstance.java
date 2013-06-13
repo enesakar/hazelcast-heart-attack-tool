@@ -1,12 +1,12 @@
 package com.hazelcast.heartattack.exercises;
 
 import com.hazelcast.heartattack.AbstractExerciseInstance;
-
-import java.util.logging.Logger;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 public class ProducerConsumerExerciseInstance extends AbstractExerciseInstance {
 
-    private final static Logger log = Logger.getLogger(ProducerConsumerExerciseInstance.class.getName());
+    final static ILogger log = Logger.getLogger(MapExerciseInstance.class.getName());
 
     @Override
     public void localSetup() throws Exception {

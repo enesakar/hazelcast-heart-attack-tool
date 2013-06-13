@@ -8,5 +8,6 @@ echo  HEART_ATTACK_HOME = ${HEART_ATTACK_HOME}
 
 export JAVA_OPTS="-Xms64m -Xmx1g -XX:MaxPermSize=256m -server"
 java -cp "${HEART_ATTACK_HOME}/lib/*" ${JAVA_OPTS} \
-    -Djava.util.logging.config.file=conf/coach-logging.properties \
-    com.hazelcast.heartattack.AssistantCoach "$@"
+   -Dhazelcast.logging.type=log4j \
+   -Dlog4j.configuration=file:${HEART_ATTACK_HOME}/conf/coach-log4j.xml \
+   com.hazelcast.heartattack.AssistantCoach "$@"

@@ -3,13 +3,15 @@ package com.hazelcast.heartattack.exercises;
 
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.heartattack.AbstractExerciseInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.util.Random;
-import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class AtomicLongExerciseInstance extends AbstractExerciseInstance<AtomicLongExercise> {
 
-    private final static Logger log = Logger.getLogger(AtomicLongExerciseInstance.class.getName());
+    final static ILogger log = Logger.getLogger(AtomicLongExerciseInstance.class.getName());
 
     private IAtomicLong totalCounter;
     private IAtomicLong[] counters;
@@ -58,7 +60,7 @@ public class AtomicLongExerciseInstance extends AbstractExerciseInstance<AtomicL
                 int index = random.nextInt(counters.length);
                 counters[index].incrementAndGet();
                 if (iteration % 10000 == 0) {
-                    log.info(Thread.currentThread().getName() + " At iteration: " + iteration);
+                    log.log(Level.INFO, Thread.currentThread().getName() + " At iteration: " + iteration);
                 }
                 iteration++;
             }

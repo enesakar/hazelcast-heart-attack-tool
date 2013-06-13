@@ -1,41 +1,33 @@
 package com.hazelcast.heartattack;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.*;
+import com.hazelcast.core.IAtomicLong;
+import com.hazelcast.core.ICondition;
+import com.hazelcast.core.ILock;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 
+import java.io.File;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Logger;
+import java.util.logging.Level;
 
-public class AssistantCoach implements Coach {
-    private final static Logger log = Logger.getLogger(HeadCoach.class.getName());
+import static com.hazelcast.heartattack.Utils.exitWithError;
+import static java.lang.String.format;
 
-    private HazelcastInstance coachHz;
-    private HazelcastInstance traineeHz;
+public class AssistantCoach extends Coach {
+    final static ILogger log = Logger.getLogger(AssistantCoach.class.getName());
 
-    private HazelcastInstance createCoachHazelcastInstance() {
-        Config config = new Config();
-        config.getUserContext().put("Coach", this);
-        config.getGroupConfig().setName("coach");
-        return Hazelcast.newHazelcastInstance(config);
-    }
-
-    private void start() throws InterruptedException, ExecutionException {
-        coachHz = createCoachHazelcastInstance();
+    private void run() throws InterruptedException, ExecutionException {
+        createCoachHazelcastInstance();
         traineeHz = Trainee.createHazelcastInstance();
         awaitHeadCoachAvailable();
     }
 
-    @Override
-    public HazelcastInstance getTraineeHazelcastInstance() {
-        return traineeHz;
-    }
-
     private void awaitHeadCoachAvailable() {
-        log.info("Awaiting Head Coach");
+        log.log(Level.INFO, "Awaiting Head Coach");
 
         ILock lock = coachHz.getLock("Coach:headCoachLock");
         lock.lock();
@@ -52,28 +44,38 @@ public class AssistantCoach implements Coach {
             lock.unlock();
         }
 
-        log.info("Head Coach Arrived");
+        log.log(Level.INFO,"Head Coach Arrived");
     }
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Hazelcast Assistent Coach");
+        System.out.println("Hazelcast Assistant Coach");
 
         OptionParser parser = new OptionParser();
         OptionSpec helpSpec = parser.accepts("help", "Show help").forHelp();
+        OptionSpec<String> coachHzFileSpec = parser.accepts("coachHzFile", "The Hazelcast xml configuration file for the coach")
+                .withRequiredArg().ofType(String.class);
 
-        OptionSet set;
+        OptionSet options;
         try {
-            set = parser.parse(args);
-            if (set.has(helpSpec)) {
+            options = parser.parse(args);
+
+            if (options.has(helpSpec)) {
                 parser.printHelpOn(System.out);
                 System.exit(0);
             }
 
             AssistantCoach coach = new AssistantCoach();
-            coach.start();
+            if (options.hasArgument(coachHzFileSpec)) {
+                File file = new File(options.valueOf(coachHzFileSpec));
+                if (!file.exists()) {
+                    exitWithError(format("Coach Hazelcast config file [%s] does not exist\n", file));
+                }
+                coach.setCoachHzFile(file);
+            }
+
+            coach.run();
         } catch (OptionException e) {
-            System.out.println(e.getMessage() + ". Use --help to get overview of the help options.");
-            System.exit(1);
+            exitWithError(e.getMessage() + "\nUse --help to get overview of the help options.");
         }
     }
 }

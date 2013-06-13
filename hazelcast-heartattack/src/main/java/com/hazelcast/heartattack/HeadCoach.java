@@ -4,14 +4,13 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hazelcast.client.HazelcastClient;
-import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.Config;
 import com.hazelcast.core.*;
+import com.hazelcast.heartattack.tasks.DestroyTraineesTask;
 import com.hazelcast.heartattack.tasks.GenericExerciseTask;
 import com.hazelcast.heartattack.tasks.InitExerciseTask;
-import com.hazelcast.heartattack.tasks.ShutdownTask;
-import com.hazelcast.heartattack.tasks.SpawnTrainees;
+import com.hazelcast.heartattack.tasks.SpawnTraineesTask;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -25,24 +24,21 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
+import static com.hazelcast.heartattack.Utils.exitWithError;
 import static com.hazelcast.heartattack.Utils.sleepSeconds;
 import static java.lang.String.format;
 
-public class HeadCoach implements Coach {
+public class HeadCoach extends Coach {
+    final static ILogger log = Logger.getLogger(HeadCoach.class.getName());
 
-    private final static Logger log = Logger.getLogger(HeadCoach.class.getName());
-
-    private HazelcastInstance coachHz;
-    private HazelcastInstance traineeHz;
-    private IExecutorService traineeExecutor;
     private IExecutorService coachExecutor;
     private int durationSec;
     private String traineeVmOptions;
     private Workout workout;
     private int traineeVmCount;
     private boolean traineeTrackLogging;
+    private File traineeHzFile;
 
     public void setWorkout(Workout workout) {
         this.workout = workout;
@@ -50,21 +46,6 @@ public class HeadCoach implements Coach {
 
     public HazelcastInstance getCoachHazelcastInstance() {
         return coachHz;
-    }
-
-    public HazelcastInstance getTraineeHazelcastInstance() {
-        //nasty hack
-
-        if(traineeHz == null){
-            ClientConfig clientConfig = new ClientConfig().addAddress("localhost:6701");
-            clientConfig.getGroupConfig()
-                    .setName(Trainee.TRAINEE_GROUP)
-                    .setPassword("password");
-            traineeHz = HazelcastClient.newHazelcastClient(clientConfig);
-            traineeExecutor = traineeHz.getExecutorService(Trainee.TRAINEE_EXECUTOR);
-        }
-
-        return traineeHz;
     }
 
     public void setDurationSec(Integer durationSec) {
@@ -99,72 +80,75 @@ public class HeadCoach implements Coach {
         return traineeVmCount;
     }
 
-    private HazelcastInstance createCoachHazelcastInstance() {
-        Config config = new Config();
-        config.getUserContext().put("Coach", this);
-        config.getGroupConfig().setName("coach");
-        return Hazelcast.newHazelcastInstance(config);
+    public void setTraineeHzFile(File traineeHzFile) {
+        this.traineeHzFile = traineeHzFile;
     }
 
-    private void start() throws InterruptedException, ExecutionException {
+    public File getTraineeHzFile() {
+        return traineeHzFile;
+    }
+
+    private void run() throws InterruptedException, ExecutionException {
         System.out.printf("Exercises: %s\n", workout.size());
         System.out.printf("Expected running time: %s seconds\n", workout.size() * durationSec);
-        System.out.printf("Trainee's per coach: %s.\n", traineeVmCount);
-        System.out.printf("Trainee track logging: %s.\n", traineeVmCount);
+        System.out.printf("Trainee's per coach: %s\n", traineeVmCount);
+        System.out.printf("Trainee track logging: %s\n", traineeTrackLogging);
 
         long startMs = System.currentTimeMillis();
 
-        coachHz = createCoachHazelcastInstance();
+        createCoachHazelcastInstance();
         coachExecutor = coachHz.getExecutorService("Coach:Executor");
 
         signalHeadCoachAvailable();
 
-        log.info(format("Starting %s trainee Java Virtual Machines", traineeVmCount));
-        submitToAllAndWait(coachExecutor, new SpawnTrainees(traineeVmCount, traineeVmOptions, traineeTrackLogging));
+        log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines", traineeVmCount));
+        submitToAllAndWait(coachExecutor, new SpawnTraineesTask(traineeVmCount, traineeVmOptions, traineeTrackLogging));
 
         long durationMs = System.currentTimeMillis() - startMs;
-        log.info(format("Trainee Java Virtual Machines have started after %s ms\n", durationMs));
+        log.log(Level.INFO, (format("Trainee Java Virtual Machines have started after %s ms\n", durationMs)));
 
         for (Exercise exercise : workout.getExerciseList()) {
-            doExercise(exercise);
+            run(exercise);
         }
 
-        submitToAllAndWait(traineeExecutor, new ShutdownTask());
+        getTraineeHazelcastClient().getLifecycleService().shutdown();
+
+        submitToAllAndWait(coachExecutor, new DestroyTraineesTask());
 
         long elapsedMs = System.currentTimeMillis() - startMs;
         System.out.printf("Total running time: %s\n", elapsedMs / 1000);
     }
 
-    private void doExercise(Exercise exercise) {
+    private void run(Exercise exercise) {
         try {
-            log.info("Exercise initializing");
+            log.log(Level.INFO, "Exercise initializing");
             submitToAllAndWait(traineeExecutor, new InitExerciseTask(exercise));
 
-            log.info("Exercise global setup");
+            log.log(Level.INFO, "Exercise global setup");
             submitToOneAndWait(new GenericExerciseTask("globalSetup"));
 
-            log.info("Exercise local setup");
+            log.log(Level.INFO, "Exercise local setup");
             submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localSetup"));
 
-            log.info("Exercise task");
+            log.log(Level.INFO, "Exercise task");
             submitToAllAndWait(traineeExecutor, new GenericExerciseTask("start"));
 
-            log.info(format("Exercise running for %s seconds", durationSec));
+            log.log(Level.INFO, format("Exercise running for %s seconds", durationSec));
             sleepSeconds(durationSec);
 
-            log.info("Exercise stop");
+            log.log(Level.INFO, "Exercise stop");
             submitToAllAndWait(traineeExecutor, new GenericExerciseTask("stop"));
 
-            log.info("Exercise global verify");
+            log.log(Level.INFO, "Exercise global verify");
             submitToOneAndWait(new GenericExerciseTask("globalVerify"));
 
-            log.info("Exercise local verify");
+            log.log(Level.INFO, "Exercise local verify");
             submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localVerify"));
 
-            log.info("Exercise local tear down");
+            log.log(Level.INFO, "Exercise local tear down");
             submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localTearDown"));
 
-            log.info("Exercise global tear down");
+            log.log(Level.INFO, "Exercise global tear down");
             submitToOneAndWait(new GenericExerciseTask("globalTearDown"));
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed", e);
@@ -175,8 +159,8 @@ public class HeadCoach implements Coach {
         traineeExecutor.submit(task).get();
     }
 
-    private void submitToAllAndWait(IExecutorService executorSerivce, Callable task) throws InterruptedException, ExecutionException {
-        Map<Member, Future> map = executorSerivce.submitToAllMembers(task);
+    private void submitToAllAndWait(IExecutorService executorService, Callable task) throws InterruptedException, ExecutionException {
+        Map<Member, Future> map = executorService.submitToAllMembers(task);
         getAllFutures(map.values());
     }
 
@@ -204,47 +188,67 @@ public class HeadCoach implements Coach {
         System.out.println("Hazelcast Heart Attack Coach");
 
         OptionParser parser = new OptionParser();
-        OptionSpec<Integer> durationSpec = parser.accepts("duration", "Number of seconds to start)")
+        OptionSpec<Integer> durationSpec = parser.accepts("duration", "Number of seconds to run per workout)")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(60);
         OptionSpec traineeTrackLoggingSpec = parser.accepts("traineeTrackLogging", "If the coach is tracking trainee logging");
-        OptionSpec<Integer> traineeCountSpec = parser.accepts("traineeVmCount", "Number of Trainee VM's per Coach")
+        OptionSpec<Integer> traineeCountSpec = parser.accepts("traineeVmCount", "Number of trainee VM's per coach")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(1);
         OptionSpec<String> traineeVmOptionsSpec = parser.accepts("traineeVmOptions", "Trainee VM options (quotes can be used)")
                 .withRequiredArg().ofType(String.class).defaultsTo("");
+        OptionSpec<String> traineeHzFileSpec = parser.accepts("traineeHzFile", "The Hazelcast xml configuration file for the trainee")
+                .withRequiredArg().ofType(String.class);
+        OptionSpec<String> coachHzFileSpec = parser.accepts("coachHzFile", "The Hazelcast xml configuration file for the coach")
+                .withRequiredArg().ofType(String.class);
+
         OptionSpec helpSpec = parser.accepts("help", "Show help").forHelp();
 
-        OptionSet set;
+        OptionSet options;
         try {
-            set = parser.parse(args);
-            if (set.has(helpSpec)) {
+            options = parser.parse(args);
+            if (options.has(helpSpec)) {
                 parser.printHelpOn(System.out);
                 System.exit(0);
             }
 
             String workoutFileName = "workout.json";
-            List<String> workoutFiles = set.nonOptionArguments();
+            List<String> workoutFiles = options.nonOptionArguments();
             if (workoutFiles.size() == 1) {
                 workoutFileName = workoutFiles.get(0);
             } else if (workoutFiles.size() > 1) {
-                System.out.println("Too many workout files specified.");
-                System.exit(1);
+                exitWithError("Too many workout files specified.");
             }
 
             Workout workout = createWorkout(new File(workoutFileName));
 
             HeadCoach coach = new HeadCoach();
             coach.setWorkout(workout);
-            coach.setTraineeTrackLogging(set.has(traineeTrackLoggingSpec));
-            coach.setDurationSec(set.valueOf(durationSpec));
-            coach.setTraineeVmOptions(set.valueOf(traineeVmOptionsSpec));
-            coach.setTraineeVmCount(set.valueOf(traineeCountSpec));
+            coach.setTraineeTrackLogging(options.has(traineeTrackLoggingSpec));
+            coach.setDurationSec(options.valueOf(durationSpec));
+            coach.setTraineeVmOptions(options.valueOf(traineeVmOptionsSpec));
+            coach.setTraineeVmCount(options.valueOf(traineeCountSpec));
+            if (options.hasArgument(traineeHzFileSpec)) {
+                File file = new File(options.valueOf(traineeHzFileSpec));
+                if (!file.exists()) {
+                    exitWithError(format("Trainee Hazelcast config file [%s] does not exist\n", file));
+                }
+                coach.setTraineeHzFile(file);
+            }
 
-            coach.start();
+            if (options.hasArgument(coachHzFileSpec)) {
+                File file = new File(options.valueOf(coachHzFileSpec));
+                if (!file.exists()) {
+                    exitWithError(format("Coach Hazelcast config file [%s] does not exist\n", file));
+                }
+                coach.setCoachHzFile(file);
+            }
+
+            coach.run();
+            System.exit(0);
         } catch (OptionException e) {
-            System.out.println(e.getMessage() + ". Use --help to get overview of the help options.");
-            System.exit(1);
+            Utils.exitWithError(e.getMessage() + ". Use --help to get overview of the help options.");
         }
     }
+
 
     // http://programmerbruce.blogspot.com/2011/05/deserialize-json-with-jackson-into.html
     private static Workout createWorkout(File file) throws Exception {
@@ -262,5 +266,4 @@ public class HeadCoach implements Coach {
         workout.getExerciseList().addAll(exercises);
         return workout;
     }
-
 }

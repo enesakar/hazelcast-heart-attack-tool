@@ -2,13 +2,15 @@ package com.hazelcast.heartattack.exercises;
 
 import com.hazelcast.core.IMap;
 import com.hazelcast.heartattack.AbstractExerciseInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.util.Random;
-import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class MapExerciseInstance extends AbstractExerciseInstance<MapExercise> {
 
-    private final static Logger log = Logger.getLogger(MapExerciseInstance.class.getName());
+    final static ILogger log = Logger.getLogger(MapExerciseInstance.class.getName());
 
     private final static String alphabet = "abcdefghijklmnopqrstuvwxyz1234567890";
 
@@ -62,7 +64,7 @@ public class MapExerciseInstance extends AbstractExerciseInstance<MapExercise> {
                 Object value = values[random.nextInt(values.length)];
                 map.put(key, value);
                 if (iteration % 10000 == 0) {
-                    log.info(Thread.currentThread().getName() + " At iteration: " + iteration);
+                    log.log(Level.INFO, Thread.currentThread().getName() + " At iteration: " + iteration);
                 }
                 iteration++;
             }

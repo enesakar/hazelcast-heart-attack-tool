@@ -21,6 +21,15 @@
                 <exclude>bin/*</exclude>
             </excludes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../hazelcast-heartattack/conf</directory>
+            <outputDirectory>/conf</outputDirectory>
+
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../hazelcast-heartattack/workouts</directory>
+            <outputDirectory>/workouts</outputDirectory>
+        </fileSet>
     </fileSets>
     <dependencySets>
         <dependencySet>

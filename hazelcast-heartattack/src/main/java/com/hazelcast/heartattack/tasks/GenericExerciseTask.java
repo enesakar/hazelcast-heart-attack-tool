@@ -3,18 +3,19 @@ package com.hazelcast.heartattack.tasks;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.heartattack.ExerciseInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static java.lang.String.format;
 
 public class GenericExerciseTask implements Callable, Serializable, HazelcastInstanceAware {
 
-    private final static Logger log = Logger.getLogger(GenericExerciseTask.class.getName());
+    final static ILogger log = Logger.getLogger(GenericExerciseTask.class.getName());
 
     private transient HazelcastInstance hz;
     private final String methodName;
@@ -26,7 +27,7 @@ public class GenericExerciseTask implements Callable, Serializable, HazelcastIns
     @Override
     public Object call() throws Exception {
         try {
-            log.info("Calling exerciseInstance." + methodName + "()");
+            log.log(Level.INFO, "Calling exerciseInstance." + methodName + "()");
 
             ExerciseInstance exerciseInstance = (ExerciseInstance) hz.getUserContext().get(ExerciseInstance.EXERCISE_INSTANCE);
             if (exerciseInstance != null) {
@@ -36,7 +37,7 @@ public class GenericExerciseTask implements Callable, Serializable, HazelcastIns
                 System.out.println("No ExerciseInstance found for method: " + methodName);
             }
 
-            log.info("Finished calling exerciseInstance." + methodName + "()");
+            log.log(Level.INFO, "Finished calling exerciseInstance." + methodName + "()");
             return null;
         } catch (Exception e) {
             e.printStackTrace();

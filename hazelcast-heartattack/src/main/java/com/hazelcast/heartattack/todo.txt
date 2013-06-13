@@ -1,23 +1,30 @@
 TODO
 
+- it should be easy to include new jars for custom exercises
+
 - heart attack indicator; when a worker thread throws an exception, it should be posted on a central topic
 that will be listened to by the master and he will decide to kill
 
 - coach needs to log into log dir.
 
-- configuration of hazelcast.xml file for coach
-
-- configuration of hazelcast.xml file for trainee
+- configuration of hazelcast.xml file for trainee  ; needs to be done in 2 parts.. client and cluster.
 
 - mechanism for killing trainees
 
-- mechanism for adding trainees
+- mechanism for adding trainees  on the fly
+
+- coaches need to write to unique filename so that multiple coaches can run in parallel (for testing).
+
+DONE
+
+- changed the logging so it relies on hazelcast logging.
+
+- when an exercise fails, it needs to be correctly cleaned (also the trainees need to be killed no matter what)
 
 - problem; because the coach also starts a trainee-hz, it will participate as trainee. This is no good.
 So instead of having a trainee hz on each coach, probably better to have a coach instance on each trainee.
 
-DONE
-
+- configuration of hazelcast.xml file for coach
 
 - option to see the trainee logging within the coach
 

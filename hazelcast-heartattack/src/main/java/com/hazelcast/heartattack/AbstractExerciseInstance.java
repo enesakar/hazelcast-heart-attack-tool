@@ -1,16 +1,17 @@
 package com.hazelcast.heartattack;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public abstract class AbstractExerciseInstance<E extends Exercise> implements ExerciseInstance {
 
-    private final static Logger log = Logger.getLogger(AbstractExerciseInstance.class.getName());
+    final static ILogger log = Logger.getLogger(AbstractExerciseInstance.class.getName());
 
     protected HazelcastInstance hazelcastInstance;
     protected E exercise;

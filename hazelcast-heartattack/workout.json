@@ -1,6 +1,7 @@
 ["java.util.ArrayList",[
-          ["com.hazelcast.heartattack.exercises.ExecutorExercise",{
-            "executorCount":5
+        ["com.hazelcast.heartattack.exercises.AtomicLongExercise",{
+            "threadCount":10,
+            "countersLength":1000
         }]
     ]
 ]

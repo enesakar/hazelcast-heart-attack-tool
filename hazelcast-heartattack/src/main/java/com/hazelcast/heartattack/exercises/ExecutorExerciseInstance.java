@@ -5,17 +5,19 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IAtomicLong;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.heartattack.AbstractExerciseInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.Serializable;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
+import java.util.logging.Level;
 
 public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorExercise> {
 
-    private final static Logger log = Logger.getLogger(ExecutorExerciseInstance.class.getName());
+    final static ILogger log = Logger.getLogger(AtomicLongExerciseInstance.class.getName());
 
     private IExecutorService[] executors;
     private IAtomicLong executedCounter;
@@ -23,7 +25,7 @@ public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorE
 
     @Override
     public void localSetup() {
-        log.info("localSetup");
+        log.log(Level.INFO, "localSetup");
 
         executors = new IExecutorService[exercise.executorCount];
         for (int k = 0; k < executors.length; k++) {
@@ -44,7 +46,7 @@ public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorE
         expectedExecutedCounter.destroy();
         for (IExecutorService executor : executors) {
             executor.shutdownNow();
-            if(!executor.awaitTermination(60, TimeUnit.SECONDS)){
+            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
                 throw new RuntimeException("Time out while waiting for executor shutdown");
             }
             executor.destroy();
@@ -80,7 +82,7 @@ public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorE
                 }
 
                 if (iteration % 10000 == 0) {
-                    log.info(Thread.currentThread().getName() + " At iteration: " + iteration);
+                    log.log(Level.INFO, Thread.currentThread().getName() + " At iteration: " + iteration);
                 }
                 iteration++;
             }

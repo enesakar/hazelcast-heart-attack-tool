@@ -6,3 +6,6 @@ target/
 .patch
 *.iml
 .DS_Store
+*.log
+hazelcast-heartattack/trainees/*
+hazelcast-heartattack/logs/*
