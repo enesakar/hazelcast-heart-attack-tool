@@ -51,7 +51,6 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
         try {
             Coach coach = (Coach) hz.getUserContext().get(Coach.KEY_COACH);
 
-
             String classpath = System.getProperty("java.class.path");
             String[] clientVmOptionsArray = new String[]{};
             if (traineeVmOptions != null && !traineeVmOptions.trim().isEmpty()) {
@@ -66,15 +65,12 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
 
             Config config = new XmlConfigBuilder(traineeHzFile.getAbsolutePath()).build();
 
-             String heartAttackHome = Utils.getHeartAttackHome().getAbsolutePath();
-
             for (int k = 0; k < traineeVmCount; k++) {
                 String traineeId = "" + System.currentTimeMillis();
                 traineeIds.add(traineeId);
 
                 List<String> args = new LinkedList<String>();
                 args.add("java");
-                args.add(format("-Djava.util.logging.config.file=%s/conf/trainee-logging.properties", heartAttackHome));
                 args.add("-cp");
                 args.add(classpath);
                 args.addAll(Arrays.asList(clientVmOptionsArray));
@@ -83,21 +79,15 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
                 args.add(traineeHzFile.getAbsolutePath());
 
                 File userDir = new File(System.getProperty("user.dir"));
-                File traineeDir = new File(userDir, "trainees");
-                File targetDir = new File(traineeDir, traineeId);
-                if (!targetDir.mkdirs()) {
-                    throw new RuntimeException("Could not create target directory: " + targetDir.getAbsolutePath());
-                }
 
-                Process process = new ProcessBuilder(args.toArray(new String[args.size()]))
+                ProcessBuilder processBuilder = new ProcessBuilder(args.toArray(new String[args.size()]))
                         .directory(userDir)
-                        .start();
+                        .redirectErrorStream(true);
+                Process process = processBuilder.start();
+
                 coach.getTraineeProcesses().add(process);
 
-                if (traineeTrackLogging) {
-                    new LoggingThread(traineeId, process.getInputStream()).start();
-                    new LoggingThread(traineeId, process.getErrorStream()).start();
-                }
+                new LoggingThread(traineeId, process.getInputStream(), traineeTrackLogging).start();
             }
 
             coach.initTraineeClient(config);
@@ -143,10 +133,12 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
 
         private final InputStream inputStream;
         private final String prefix;
+        private final boolean traineeTrackLogging;
 
-        public LoggingThread(String prefix, InputStream inputStream) {
+        public LoggingThread(String prefix, InputStream inputStream, boolean traineeTrackLogging) {
             this.inputStream = inputStream;
             this.prefix = prefix;
+            this.traineeTrackLogging = traineeTrackLogging;
         }
 
         public void run() {
@@ -155,7 +147,7 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
                 for (; ; ) {
                     final String line = br.readLine();
                     if (line == null) break;
-                    if (log.isLoggable(Level.INFO)) {
+                    if (log.isLoggable(Level.INFO) && traineeTrackLogging) {
                         log.log(Level.INFO, prefix + ": " + line);
                     }
                 }

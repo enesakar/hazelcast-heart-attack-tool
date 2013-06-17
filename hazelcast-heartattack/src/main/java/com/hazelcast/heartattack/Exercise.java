@@ -22,4 +22,6 @@ public interface Exercise extends Serializable {
     ExerciseInstance newInstance(HazelcastInstance hz);
 
     String getId();
+
+    String getDescription();
 }

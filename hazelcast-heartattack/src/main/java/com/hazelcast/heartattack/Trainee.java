@@ -57,6 +57,8 @@ public class Trainee {
         String traineeHzFile = args[1];
         log.log(Level.INFO, "Trainee hz config file:" + traineeHzFile);
 
+        System.setProperty("traineeId",traineeId);
+
         Trainee trainee = new Trainee();
         trainee.setTraineeId(traineeId);
         trainee.setTraineeHzFile(traineeHzFile);
@@ -64,5 +66,4 @@ public class Trainee {
 
         log.log(Level.INFO, "Successfully started Hazelcast Heart Attack Trainee");
     }
-
 }

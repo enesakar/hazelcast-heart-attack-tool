@@ -2,7 +2,10 @@ package com.hazelcast.heartattack;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.hazelcast.core.HazelcastInstance;
+import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
+import java.lang.reflect.Field;
 import java.util.UUID;
 
 public abstract class AbstractExercise implements Exercise {
@@ -35,5 +38,19 @@ public abstract class AbstractExercise implements Exercise {
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public String getDescription() {
+        return (new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE) {
+            protected boolean accept(Field f) {
+                if(super.accept(f)){
+                    return false;
+                }
+
+                final String name = f.getName();
+                return !name.equals("clazzName") && !!name.equals("id");
+            }
+        }).toString();
     }
 }

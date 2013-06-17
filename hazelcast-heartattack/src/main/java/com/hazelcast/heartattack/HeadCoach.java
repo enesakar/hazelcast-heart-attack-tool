@@ -87,7 +87,7 @@ public class HeadCoach extends Coach {
         return traineeHzFile;
     }
 
-   private void run() throws InterruptedException, ExecutionException {
+    private void run() throws InterruptedException, ExecutionException {
         System.out.printf("Exercises: %s\n", workout.size());
         System.out.printf("Expected running time: %s seconds\n", workout.size() * durationSec);
         System.out.printf("Trainee's per coach: %s\n", traineeVmCount);
@@ -123,6 +123,8 @@ public class HeadCoach extends Coach {
 
     private void run(Exercise exercise) {
         try {
+            log.log(Level.INFO, exercise.getDescription());
+
             log.log(Level.INFO, "Exercise initializing");
             submitToAllAndWait(traineeExecutor, new InitExerciseTask(exercise));
 
@@ -198,8 +200,8 @@ public class HeadCoach extends Coach {
         OptionSpec<Integer> traineeCountSpec = parser.accepts("traineeVmCount", "Number of trainee VM's per coach")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(1);
         OptionSpec<String> traineeVmOptionsSpec = parser.accepts("traineeVmOptions", "Trainee VM options (quotes can be used)")
-                .withRequiredArg().ofType(String.class).defaultsTo("");
-        OptionSpec<String> traineeHzFileSpec = parser.accepts("traineeHzFile", "The Hazelcast xml configuration file for the trainee")
+                .withRequiredArg().ofType(String.class).defaultsTo("-Xmx128m -Dlog4j.configuration=file:"+heartAttackHome+File.separator+"conf"+File.separator+"trainee-log4j.xml");
+        OptionSpec <String> traineeHzFileSpec = parser.accepts("traineeHzFile", "The Hazelcast xml configuration file for the trainee")
                 .withRequiredArg().ofType(String.class).defaultsTo(heartAttackHome + File.separator + "conf" + File.separator + "trainee-hazelcast.xml");
         OptionSpec<String> coachHzFileSpec = parser.accepts("coachHzFile", "The Hazelcast xml configuration file for the coach")
                 .withRequiredArg().ofType(String.class).defaultsTo(heartAttackHome + File.separator + "conf" + File.separator + "coach-hazelcast.xml");
