@@ -21,23 +21,23 @@ import static java.lang.String.format;
 public class SpawnTraineesTask implements Callable, Serializable, HazelcastInstanceAware {
     final static ILogger log = Logger.getLogger(InitExerciseTask.class.getName());
 
-    public static final String KEY_COACH = "Coach";
-
     private final String traineeVmOptions;
     private final boolean traineeTrackLogging;
+    private final String traineeHzConfig;
     private transient HazelcastInstance hz;
     private final int traineeVmCount;
 
-    public SpawnTraineesTask(int traineeVmCount, String traineeVmOptions, boolean traineeTrackLogging) {
+    public SpawnTraineesTask(int traineeVmCount, String traineeVmOptions, boolean traineeTrackLogging, String traineeHzConfig) {
         this.traineeVmCount = traineeVmCount;
         this.traineeVmOptions = traineeVmOptions;
         this.traineeTrackLogging = traineeTrackLogging;
+        this.traineeHzConfig = traineeHzConfig;
     }
 
     @Override
     public Object call() throws Exception {
         try {
-            Coach coach = (Coach) hz.getUserContext().get(KEY_COACH);
+            Coach coach = (Coach) hz.getUserContext().get(Coach.KEY_COACH);
 
 
             String classpath = System.getProperty("java.class.path");
@@ -47,7 +47,12 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
             }
 
             List<String> traineeIds = new LinkedList<String>();
-            String heartAttackHome = System.getenv("HEART_ATTACK_HOME");
+
+            File traineeHzFile = File.createTempFile("trainee-hazelcast", "xml");
+            traineeHzFile.deleteOnExit();
+            Utils.write(traineeHzFile, traineeHzConfig);
+
+            String heartAttackHome = Utils.getHeartAttackHome().getAbsolutePath();
 
             for (int k = 0; k < traineeVmCount; k++) {
                 String traineeId = "" + System.currentTimeMillis();
@@ -61,6 +66,7 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
                 args.addAll(Arrays.asList(clientVmOptionsArray));
                 args.add(Trainee.class.getName());
                 args.add(traineeId);
+                args.add(traineeHzFile.getAbsolutePath());
 
                 File userDir = new File(System.getProperty("user.dir"));
                 File traineeDir = new File(userDir, "trainees");
@@ -80,8 +86,6 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
                 }
             }
 
-            Utils.sleepSeconds(20);
-
             for (String traineeId : traineeIds) {
                 waitForTraineeStartup(coach, traineeId);
             }
@@ -97,7 +101,7 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
         IMap<String, String> traineeParticipantMap = coach.getTraineeHazelcastClient().getMap(Trainee.TRAINEE_PARTICIPANT_MAP);
 
         boolean found = false;
-        for (int l = 0; l < 180; l++) {
+        for (int l = 0; l < 300; l++) {
             if (traineeParticipantMap.containsKey(id)) {
                 traineeParticipantMap.remove(id);
                 found = true;
@@ -109,9 +113,8 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
 
         if (!found) {
             throw new RuntimeException(format("Trainee %s didn't start up in time", id));
-        } else {
-            log.log(Level.INFO, "Trainee: " + id + " Started");
         }
+        log.log(Level.INFO, "Trainee: " + id + " Started");
     }
 
     @Override
@@ -136,7 +139,9 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
                 for (; ; ) {
                     final String line = br.readLine();
                     if (line == null) break;
-                    log.log(Level.INFO, prefix + ": " + line);
+                    if (log.isLoggable(Level.INFO)) {
+                        log.log(Level.INFO, prefix + ": " + line);
+                    }
                 }
             } catch (IOException e) {
             }

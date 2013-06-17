@@ -25,8 +25,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 
-import static com.hazelcast.heartattack.Utils.exitWithError;
-import static com.hazelcast.heartattack.Utils.sleepSeconds;
+import static com.hazelcast.heartattack.Utils.*;
 import static java.lang.String.format;
 
 public class HeadCoach extends Coach {
@@ -102,7 +101,7 @@ public class HeadCoach extends Coach {
         signalHeadCoachAvailable();
 
         log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines", traineeVmCount));
-        submitToAllAndWait(coachExecutor, new SpawnTraineesTask(traineeVmCount, traineeVmOptions, traineeTrackLogging));
+        submitToAllAndWait(coachExecutor, new SpawnTraineesTask(traineeVmCount, traineeVmOptions, traineeTrackLogging, asText(traineeHzFile)));
 
         long durationMs = System.currentTimeMillis() - startMs;
         log.log(Level.INFO, (format("Trainee Java Virtual Machines have started after %s ms\n", durationMs)));
@@ -116,7 +115,7 @@ public class HeadCoach extends Coach {
         submitToAllAndWait(coachExecutor, new DestroyTraineesTask());
 
         long elapsedMs = System.currentTimeMillis() - startMs;
-        System.out.printf("Total running time: %s\n", elapsedMs / 1000);
+        System.out.printf("Total running time: %s seconds\n", elapsedMs / 1000);
     }
 
     private void run(Exercise exercise) {
@@ -171,10 +170,10 @@ public class HeadCoach extends Coach {
     }
 
     private void signalHeadCoachAvailable() {
-        ILock lock = coachHz.getLock("Coach:headCoachLock");
+        ILock lock = coachHz.getLock(COACH_HEAD_COACH_LOCK);
         lock.lock();
-        ICondition condition = lock.newCondition("Coach:headCoachCondition");
-        IAtomicLong available = coachHz.getAtomicLong("Coach:headCoachCount");
+        ICondition condition = lock.newCondition(COACH_HEAD_COACH_CONDITION);
+        IAtomicLong available = coachHz.getAtomicLong(COACH_HEAD_COACH_COUNT);
 
         try {
             available.incrementAndGet();
@@ -186,6 +185,8 @@ public class HeadCoach extends Coach {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Hazelcast Heart Attack Coach");
+        File heartAttackHome = getHeartAttackHome();
+        System.out.printf("HEART_ATTACK_HOME: %s\n", heartAttackHome);
 
         OptionParser parser = new OptionParser();
         OptionSpec<Integer> durationSpec = parser.accepts("duration", "Number of seconds to run per workout)")
@@ -196,9 +197,9 @@ public class HeadCoach extends Coach {
         OptionSpec<String> traineeVmOptionsSpec = parser.accepts("traineeVmOptions", "Trainee VM options (quotes can be used)")
                 .withRequiredArg().ofType(String.class).defaultsTo("");
         OptionSpec<String> traineeHzFileSpec = parser.accepts("traineeHzFile", "The Hazelcast xml configuration file for the trainee")
-                .withRequiredArg().ofType(String.class);
+                .withRequiredArg().ofType(String.class).defaultsTo(heartAttackHome + File.separator + "conf" + File.separator + "trainee-hazelcast.xml");
         OptionSpec<String> coachHzFileSpec = parser.accepts("coachHzFile", "The Hazelcast xml configuration file for the coach")
-                .withRequiredArg().ofType(String.class);
+                .withRequiredArg().ofType(String.class).defaultsTo(heartAttackHome + File.separator + "conf" + File.separator + "coach-hazelcast.xml");
 
         OptionSpec helpSpec = parser.accepts("help", "Show help").forHelp();
 
@@ -226,21 +227,17 @@ public class HeadCoach extends Coach {
             coach.setDurationSec(options.valueOf(durationSpec));
             coach.setTraineeVmOptions(options.valueOf(traineeVmOptionsSpec));
             coach.setTraineeVmCount(options.valueOf(traineeCountSpec));
-            if (options.hasArgument(traineeHzFileSpec)) {
-                File file = new File(options.valueOf(traineeHzFileSpec));
-                if (!file.exists()) {
-                    exitWithError(format("Trainee Hazelcast config file [%s] does not exist\n", file));
-                }
-                coach.setTraineeHzFile(file);
+            File traineeHzFile = new File(options.valueOf(traineeHzFileSpec));
+            if (!traineeHzFile.exists()) {
+                exitWithError(format("Trainee Hazelcast config file [%s] does not exist\n", traineeHzFile));
             }
+            coach.setTraineeHzFile(traineeHzFile);
 
-            if (options.hasArgument(coachHzFileSpec)) {
-                File file = new File(options.valueOf(coachHzFileSpec));
-                if (!file.exists()) {
-                    exitWithError(format("Coach Hazelcast config file [%s] does not exist\n", file));
-                }
-                coach.setCoachHzFile(file);
+            File coachHzFile = new File(options.valueOf(coachHzFileSpec));
+            if (!coachHzFile.exists()) {
+                exitWithError(format("Coach Hazelcast config file [%s] does not exist\n", coachHzFile));
             }
+            coach.setCoachHzFile(coachHzFile);
 
             coach.run();
             System.exit(0);
@@ -248,7 +245,6 @@ public class HeadCoach extends Coach {
             Utils.exitWithError(e.getMessage() + ". Use --help to get overview of the help options.");
         }
     }
-
 
     // http://programmerbruce.blogspot.com/2011/05/deserialize-json-with-jackson-into.html
     private static Workout createWorkout(File file) throws Exception {

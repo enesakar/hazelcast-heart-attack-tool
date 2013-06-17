@@ -5,9 +5,9 @@ TODO
 - heart attack indicator; when a worker thread throws an exception, it should be posted on a central topic
 that will be listened to by the master and he will decide to kill
 
-- coach needs to log into log dir.
+- trainee needs to log into log dir.
 
-- configuration of hazelcast.xml file for trainee  ; needs to be done in 2 parts.. client and cluster.
+- configuration of hazelcast.xml file for trainee client
 
 - mechanism for killing trainees
 
@@ -16,6 +16,8 @@ that will be listened to by the master and he will decide to kill
 - coaches need to write to unique filename so that multiple coaches can run in parallel (for testing).
 
 DONE
+
+- configuration of hazelcast.xml file for trainee
 
 - changed the logging so it relies on hazelcast logging.
 

@@ -1,12 +1,14 @@
 package com.hazelcast.heartattack;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.io.FileNotFoundException;
 import java.util.logging.Level;
 
 public class Trainee {
@@ -17,12 +19,17 @@ public class Trainee {
     public static final String TRAINEE_EXECUTOR = "Trainee:Executor";
     public static final String TRAINEE_GROUP = "Trainee";
 
-    private final String traineeId;
+    private String traineeId;
     private HazelcastInstance hz;
     private IMap<Object, Object> map;
+    private String traineeHzFile;
 
-    public Trainee(String traineeId) {
+    public void setTraineeId(String traineeId) {
         this.traineeId = traineeId;
+    }
+
+    private void setTraineeHzFile(String traineeHzFile) {
+        this.traineeHzFile = traineeHzFile;
     }
 
     public void start() {
@@ -31,11 +38,15 @@ public class Trainee {
         this.map.put(traineeId, traineeId);
     }
 
-    public static HazelcastInstance createHazelcastInstance() {
-        Config config = new Config();
-        config.getGroupConfig().setName(Trainee.TRAINEE_GROUP);
-        config.getGroupConfig().setPassword("password");
-        config.getNetworkConfig().setPort(6701);
+    public HazelcastInstance createHazelcastInstance() {
+        XmlConfigBuilder configBuilder;
+        try {
+            configBuilder = new XmlConfigBuilder(traineeHzFile);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        Config config = configBuilder.build();
         return Hazelcast.newHazelcastInstance(config);
     }
 
@@ -43,9 +54,16 @@ public class Trainee {
         log.log(Level.INFO, "Starting Hazelcast Heart Attack Trainee");
 
         String traineeId = args[0];
-        Trainee trainee = new Trainee(traineeId);
+        log.log(Level.INFO, "Trainee id:" + traineeId);
+        String traineeHzFile = args[1];
+        log.log(Level.INFO, "Trainee hz config file:" + traineeHzFile);
+
+        Trainee trainee = new Trainee();
+        trainee.setTraineeId(traineeId);
+        trainee.setTraineeHzFile(traineeHzFile);
         trainee.start();
 
         log.log(Level.INFO, "Successfully started Hazelcast Heart Attack Trainee");
     }
+
 }
