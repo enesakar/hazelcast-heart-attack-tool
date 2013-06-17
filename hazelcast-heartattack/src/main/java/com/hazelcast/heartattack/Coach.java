@@ -24,9 +24,9 @@ public abstract class Coach {
     public static final String COACH_HEAD_COACH_COUNT = "Coach:headCoachCount";
 
     protected File coachHzFile;
-    protected HazelcastInstance coachHz;
-    protected HazelcastInstance traineeClient;
-    protected IExecutorService traineeExecutor;
+    protected volatile HazelcastInstance coachHz;
+    protected volatile HazelcastInstance traineeClient;
+    protected volatile IExecutorService traineeExecutor;
     protected final List<Process> traineeProcesses = Collections.synchronizedList(new LinkedList<Process>());
 
     public List<Process> getTraineeProcesses() {
@@ -41,22 +41,7 @@ public abstract class Coach {
         return coachHzFile;
     }
 
-    public HazelcastInstance getTraineeHazelcastClient() {
-        //nasty hack
-
-        if (traineeClient == null) {
-            ClientConfig clientConfig = new ClientConfig().addAddress("localhost:6701");
-            clientConfig.getGroupConfig()
-                    .setName(Trainee.TRAINEE_GROUP)
-                    .setPassword("password");
-            traineeClient = HazelcastClient.newHazelcastClient(clientConfig);
-            traineeExecutor = traineeClient.getExecutorService(Trainee.TRAINEE_EXECUTOR);
-        }
-
-        return traineeClient;
-    }
-
-    protected HazelcastInstance createCoachHazelcastInstance() {
+     protected HazelcastInstance createCoachHazelcastInstance() {
         FileInputStream in;
         try {
             in = new FileInputStream(coachHzFile);
@@ -73,5 +58,23 @@ public abstract class Coach {
         config.getUserContext().put(KEY_COACH, this);
         coachHz = Hazelcast.newHazelcastInstance(config);
         return coachHz;
+    }
+
+    public HazelcastInstance getTraineeClient() {
+        return traineeClient;
+    }
+
+    public void initTraineeClient(Config config) {
+        ClientConfig clientConfig = new ClientConfig().addAddress("localhost:"+config.getNetworkConfig().getPort());
+        clientConfig.getGroupConfig()
+                .setName(config.getGroupConfig().getName())
+                .setPassword(config.getGroupConfig().getPassword());
+        traineeClient = HazelcastClient.newHazelcastClient(clientConfig);
+        traineeExecutor = traineeClient.getExecutorService(Trainee.TRAINEE_EXECUTOR);
+    }
+
+    public void shutdownTraineeClient(){
+        if(traineeClient  == null) return;
+        traineeClient.getLifecycleService().shutdown();
     }
 }

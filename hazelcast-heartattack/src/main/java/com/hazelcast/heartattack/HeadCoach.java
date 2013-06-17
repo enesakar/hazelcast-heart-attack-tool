@@ -87,7 +87,7 @@ public class HeadCoach extends Coach {
         return traineeHzFile;
     }
 
-    private void run() throws InterruptedException, ExecutionException {
+   private void run() throws InterruptedException, ExecutionException {
         System.out.printf("Exercises: %s\n", workout.size());
         System.out.printf("Expected running time: %s seconds\n", workout.size() * durationSec);
         System.out.printf("Trainee's per coach: %s\n", traineeVmCount);
@@ -101,7 +101,12 @@ public class HeadCoach extends Coach {
         signalHeadCoachAvailable();
 
         log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines", traineeVmCount));
-        submitToAllAndWait(coachExecutor, new SpawnTraineesTask(traineeVmCount, traineeVmOptions, traineeTrackLogging, asText(traineeHzFile)));
+        final SpawnTraineesTask task = new SpawnTraineesTask();
+        task.setTraineeHzConfig(asText(traineeHzFile));
+        task.setTraineeTrackLogging(traineeTrackLogging);
+        task.setTraineeVmCount(traineeVmCount);
+        task.setTraineeVmOptions(traineeVmOptions);
+        submitToAllAndWait(coachExecutor, task);
 
         long durationMs = System.currentTimeMillis() - startMs;
         log.log(Level.INFO, (format("Trainee Java Virtual Machines have started after %s ms\n", durationMs)));
@@ -109,8 +114,6 @@ public class HeadCoach extends Coach {
         for (Exercise exercise : workout.getExerciseList()) {
             run(exercise);
         }
-
-        getTraineeHazelcastClient().getLifecycleService().shutdown();
 
         submitToAllAndWait(coachExecutor, new DestroyTraineesTask());
 
@@ -227,15 +230,16 @@ public class HeadCoach extends Coach {
             coach.setDurationSec(options.valueOf(durationSpec));
             coach.setTraineeVmOptions(options.valueOf(traineeVmOptionsSpec));
             coach.setTraineeVmCount(options.valueOf(traineeCountSpec));
+
             File traineeHzFile = new File(options.valueOf(traineeHzFileSpec));
             if (!traineeHzFile.exists()) {
-                exitWithError(format("Trainee Hazelcast config file [%s] does not exist\n", traineeHzFile));
+                exitWithError(format("Trainee Hazelcast config file [%s] does not exist.\n", traineeHzFile));
             }
             coach.setTraineeHzFile(traineeHzFile);
 
             File coachHzFile = new File(options.valueOf(coachHzFileSpec));
             if (!coachHzFile.exists()) {
-                exitWithError(format("Coach Hazelcast config file [%s] does not exist\n", coachHzFile));
+                exitWithError(format("Coach Hazelcast config file [%s] does not exist.\n", coachHzFile));
             }
             coach.setCoachHzFile(coachHzFile);
 
@@ -262,4 +266,5 @@ public class HeadCoach extends Coach {
         workout.getExerciseList().addAll(exercises);
         return workout;
     }
+
 }

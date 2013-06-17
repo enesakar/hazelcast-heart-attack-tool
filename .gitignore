@@ -7,5 +7,6 @@ target/
 *.iml
 .DS_Store
 *.log
+*.log.lck
 hazelcast-heartattack/trainees/*
 hazelcast-heartattack/logs/*

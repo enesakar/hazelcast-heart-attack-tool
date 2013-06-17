@@ -21,6 +21,8 @@ public class DestroyTraineesTask implements Callable, Serializable, HazelcastIns
         log.log(Level.INFO, "DestroyTraineesTask");
 
         Coach coach = (Coach) hz.getUserContext().get(Coach.KEY_COACH);
+        coach.shutdownTraineeClient();
+
         List<Process> traineeProcesses = coach.getTraineeProcesses();
         for (Process process : traineeProcesses) {
             process.destroy();

@@ -1,5 +1,7 @@
 package com.hazelcast.heartattack.tasks;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IMap;
@@ -21,17 +23,27 @@ import static java.lang.String.format;
 public class SpawnTraineesTask implements Callable, Serializable, HazelcastInstanceAware {
     final static ILogger log = Logger.getLogger(InitExerciseTask.class.getName());
 
-    private final String traineeVmOptions;
-    private final boolean traineeTrackLogging;
-    private final String traineeHzConfig;
     private transient HazelcastInstance hz;
-    private final int traineeVmCount;
 
-    public SpawnTraineesTask(int traineeVmCount, String traineeVmOptions, boolean traineeTrackLogging, String traineeHzConfig) {
-        this.traineeVmCount = traineeVmCount;
-        this.traineeVmOptions = traineeVmOptions;
-        this.traineeTrackLogging = traineeTrackLogging;
+    private String traineeVmOptions;
+    private boolean traineeTrackLogging;
+    private String traineeHzConfig;
+    private int traineeVmCount;
+
+    public void setTraineeHzConfig(String traineeHzConfig) {
         this.traineeHzConfig = traineeHzConfig;
+    }
+
+    public void setTraineeTrackLogging(boolean traineeTrackLogging) {
+        this.traineeTrackLogging = traineeTrackLogging;
+    }
+
+    public void setTraineeVmCount(int traineeVmCount) {
+        this.traineeVmCount = traineeVmCount;
+    }
+
+    public void setTraineeVmOptions(String traineeVmOptions) {
+        this.traineeVmOptions = traineeVmOptions;
     }
 
     @Override
@@ -52,7 +64,9 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
             traineeHzFile.deleteOnExit();
             Utils.write(traineeHzFile, traineeHzConfig);
 
-            String heartAttackHome = Utils.getHeartAttackHome().getAbsolutePath();
+            Config config = new XmlConfigBuilder(traineeHzFile.getAbsolutePath()).build();
+
+             String heartAttackHome = Utils.getHeartAttackHome().getAbsolutePath();
 
             for (int k = 0; k < traineeVmCount; k++) {
                 String traineeId = "" + System.currentTimeMillis();
@@ -86,6 +100,8 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
                 }
             }
 
+            coach.initTraineeClient(config);
+
             for (String traineeId : traineeIds) {
                 waitForTraineeStartup(coach, traineeId);
             }
@@ -98,7 +114,7 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
     }
 
     private void waitForTraineeStartup(Coach coach, String id) throws InterruptedException {
-        IMap<String, String> traineeParticipantMap = coach.getTraineeHazelcastClient().getMap(Trainee.TRAINEE_PARTICIPANT_MAP);
+        IMap<String, String> traineeParticipantMap = coach.getTraineeClient().getMap(Trainee.TRAINEE_PARTICIPANT_MAP);
 
         boolean found = false;
         for (int l = 0; l < 300; l++) {

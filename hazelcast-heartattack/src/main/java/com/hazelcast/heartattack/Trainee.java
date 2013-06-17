@@ -17,7 +17,6 @@ public class Trainee {
 
     public static final String TRAINEE_PARTICIPANT_MAP = "Trainee:ParticipantMap";
     public static final String TRAINEE_EXECUTOR = "Trainee:Executor";
-    public static final String TRAINEE_GROUP = "Trainee";
 
     private String traineeId;
     private HazelcastInstance hz;
