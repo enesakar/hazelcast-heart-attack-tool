@@ -97,18 +97,18 @@ public abstract class Coach {
     public void spawnTrainees(TraineeSettings settings) throws Exception {
         File traineeHzFile = File.createTempFile("trainee-hazelcast", "xml");
         traineeHzFile.deleteOnExit();
-        Utils.write(traineeHzFile, settings.getTraineeHzConfig());
+        Utils.write(traineeHzFile, settings.getHzConfig());
 
         List<String> traineeIds = new LinkedList<String>();
 
         for (int k = 0; k < settings.getTraineeVmCount(); k++) {
-            TraineeJvm jvm = startTraineeJvm(settings.getTraineeVmOptions(), traineeHzFile);
+            TraineeJvm jvm = startTraineeJvm(settings.getVmOptions(), traineeHzFile);
             Process process = jvm.getProcess();
             String traineeId = jvm.getId();
 
             traineeIds.add(traineeId);
 
-            new LoggingThread(traineeId, process.getInputStream(), settings.isTraineeTrackLogging()).start();
+            new LoggingThread(traineeId, process.getInputStream(), settings.isTrackLogging()).start();
         }
 
         Config config = new XmlConfigBuilder(traineeHzFile.getAbsolutePath()).build();

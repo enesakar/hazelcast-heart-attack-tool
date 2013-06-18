@@ -3,50 +3,60 @@ package com.hazelcast.heartattack;
 import java.io.Serializable;
 
 public class TraineeSettings implements Serializable{
-    private String traineeVmOptions;
-    private boolean traineeTrackLogging;
-    private String traineeHzConfig;
-    private int traineeVmCount;
+    private String vmOptions;
+    private boolean trackLogging;
+    private String hzConfig;
+    private int traineeCount;
+    private boolean refreshJvm;
 
-    public String getTraineeHzConfig() {
-        return traineeHzConfig;
+    public boolean isRefreshJvm() {
+        return refreshJvm;
     }
 
-    public void setTraineeHzConfig(String traineeHzConfig) {
-        this.traineeHzConfig = traineeHzConfig;
+    public void setRefreshJvm(boolean refreshJvm) {
+        this.refreshJvm = refreshJvm;
     }
 
-    public boolean isTraineeTrackLogging() {
-        return traineeTrackLogging;
+    public String getHzConfig() {
+        return hzConfig;
     }
 
-    public void setTraineeTrackLogging(boolean traineeTrackLogging) {
-        this.traineeTrackLogging = traineeTrackLogging;
+    public void setHzConfig(String hzConfig) {
+        this.hzConfig = hzConfig;
+    }
+
+    public boolean isTrackLogging() {
+        return trackLogging;
+    }
+
+    public void setTrackLogging(boolean trackLogging) {
+        this.trackLogging = trackLogging;
     }
 
     public int getTraineeVmCount() {
-        return traineeVmCount;
+        return traineeCount;
     }
 
     public void setTraineeVmCount(int traineeVmCount) {
-        this.traineeVmCount = traineeVmCount;
+        this.traineeCount = traineeVmCount;
     }
 
-    public String getTraineeVmOptions() {
-        return traineeVmOptions;
+    public String getVmOptions() {
+        return vmOptions;
     }
 
-    public void setTraineeVmOptions(String traineeVmOptions) {
-        this.traineeVmOptions = traineeVmOptions;
+    public void setVmOptions(String vmOptions) {
+        this.vmOptions = vmOptions;
     }
 
     @Override
     public String toString() {
-        return "CoachSettings{" +
-                "traineeHzConfig='" + traineeHzConfig + '\'' +
-                ", traineeVmOptions='" + traineeVmOptions + '\'' +
-                ", traineeTrackLogging=" + traineeTrackLogging +
-                ", traineeVmCount=" + traineeVmCount +
+        return "TraineeSettings{" +
+                "hzConfig='" + hzConfig + '\'' +
+                ", vmOptions='" + vmOptions + '\'' +
+                ", trackLogging=" + trackLogging +
+                ", traineeVmCount=" + traineeCount +
+                ", refreshJvm=" + refreshJvm +
                 '}';
     }
 }
