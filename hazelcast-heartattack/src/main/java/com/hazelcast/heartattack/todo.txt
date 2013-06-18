@@ -2,9 +2,6 @@ TODO
 
 - it should be easy to include new jars for custom exercises
 
-- heart attack indicator; when a worker thread throws an exception, it should be posted on a central topic
-that will be listened to by the master and he will decide to kill
-
 - mechanism for killing trainees
 
 - mechanism for adding trainees  on the fly
@@ -13,7 +10,20 @@ that will be listened to by the master and he will decide to kill
 
 - in the coach vm not much output is visible
 
+- better location to store the heartattack files
+
+- when a worker encouterers an error, it should also produce a heart attack file.
+
+- setting to create a trainees per work out or to reuse them
+
+- when a heart attack of one of the trainees is encountered..  something should be done.
+    - Currently the test aborts.
+    - Start the next workout.
+
 DONE
+
+- heart attack indicator; when a worker thread throws an exception, it should be posted on a central topic
+that will be listened to by the master
 
 - version needs to be logged by head coach
 

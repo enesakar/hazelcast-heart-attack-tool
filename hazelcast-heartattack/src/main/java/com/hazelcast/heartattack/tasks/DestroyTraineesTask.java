@@ -7,9 +7,10 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.io.Serializable;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
+
+import static java.lang.String.format;
 
 public class DestroyTraineesTask implements Callable, Serializable, HazelcastInstanceAware {
     final static ILogger log = Logger.getLogger(DestroyTraineesTask.class.getName());
@@ -20,19 +21,13 @@ public class DestroyTraineesTask implements Callable, Serializable, HazelcastIns
     public Object call() throws Exception {
         log.log(Level.INFO, "DestroyTraineesTask");
 
+        long startMs = System.currentTimeMillis();
+
         Coach coach = (Coach) hz.getUserContext().get(Coach.KEY_COACH);
-        coach.shutdownTraineeClient();
+        coach.destroyTrainees();
 
-        List<Process> traineeProcesses = coach.getTraineeProcesses();
-        for (Process process : traineeProcesses) {
-            process.destroy();
-        }
-
-        for (Process process : traineeProcesses) {
-            process.waitFor();
-        }
-        traineeProcesses.clear();
-
+        long durationMs = System.currentTimeMillis() - startMs;
+        log.log(Level.INFO, format("Destroyed trainees in %s ms", durationMs));
         return null;
     }
 

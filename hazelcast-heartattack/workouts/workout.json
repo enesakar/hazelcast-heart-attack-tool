@@ -1,16 +1,10 @@
 ["java.util.ArrayList",[
-        ["com.hazelcast.heartattack.exercises.AtomicLongExercise",{
+        ["com.hazelcast.heartattack.exercises.MapExercise",{
             "threadCount":10,
-            "countersLength":1000
-        }],
-["com.hazelcast.heartattack.exercises.AtomicLongExercise",{
-            "threadCount":10,
-            "countersLength":1000
-        }],
-["com.hazelcast.heartattack.exercises.AtomicLongExercise",{
-            "threadCount":10,
-            "countersLength":1000
+            "keyLength":100,
+            "valueLength":100,
+            "keyCount":10000,
+            "valueCount":10000
         }]
-
     ]
 ]

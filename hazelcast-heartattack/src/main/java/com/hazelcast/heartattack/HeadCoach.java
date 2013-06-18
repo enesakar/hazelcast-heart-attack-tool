@@ -33,11 +33,8 @@ public class HeadCoach extends Coach {
 
     private IExecutorService coachExecutor;
     private int durationSec;
-    private String traineeVmOptions;
     private Workout workout;
-    private int traineeVmCount;
-    private boolean traineeTrackLogging;
-    private File traineeHzFile;
+    private TraineeSettings traineeSettings;
 
     public void setWorkout(Workout workout) {
         this.workout = workout;
@@ -51,61 +48,44 @@ public class HeadCoach extends Coach {
         this.durationSec = durationSec;
     }
 
-    public boolean isTraineeTrackLogging() {
-        return traineeTrackLogging;
-    }
-
-    public void setTraineeTrackLogging(boolean traineeTrackLogging) {
-        this.traineeTrackLogging = traineeTrackLogging;
-    }
-
     public int getDurationSec() {
         return durationSec;
     }
 
-    public void setTraineeVmOptions(String traineeVmOptions) {
-        this.traineeVmOptions = traineeVmOptions;
+    public TraineeSettings getTraineeSettings() {
+        return traineeSettings;
     }
 
-    public String getTraineeVmOptions() {
-        return traineeVmOptions;
-    }
-
-    public void setTraineeVmCount(int traineeCount) {
-        this.traineeVmCount = traineeCount;
-    }
-
-    public int getTraineeVmCount() {
-        return traineeVmCount;
-    }
-
-    public void setTraineeHzFile(File traineeHzFile) {
-        this.traineeHzFile = traineeHzFile;
-    }
-
-    public File getTraineeHzFile() {
-        return traineeHzFile;
+    public void setTraineeSettings(TraineeSettings traineeSettings) {
+        this.traineeSettings = traineeSettings;
     }
 
     private void run() throws InterruptedException, ExecutionException {
         System.out.printf("Exercises: %s\n", workout.size());
         System.out.printf("Expected running time: %s seconds\n", workout.size() * durationSec);
-        System.out.printf("Trainee's per coach: %s\n", traineeVmCount);
-        System.out.printf("Trainee track logging: %s\n", traineeTrackLogging);
+        System.out.printf("Trainee's per coach: %s\n", traineeSettings.getTraineeVmCount());
+        System.out.printf("Trainee track logging: %s\n", traineeSettings.isTraineeTrackLogging());
 
         long startMs = System.currentTimeMillis();
 
         createCoachHazelcastInstance();
+
+        new Thread() {
+            public void run() {
+                try {
+                    System.out.println(heartAttackQueue.take());
+                } catch (Exception e) {
+                }
+            }
+        }.start();
+
         coachExecutor = coachHz.getExecutorService("Coach:Executor");
 
         signalHeadCoachAvailable();
 
-        log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines", traineeVmCount));
-        final SpawnTraineesTask task = new SpawnTraineesTask();
-        task.setTraineeHzConfig(asText(traineeHzFile));
-        task.setTraineeTrackLogging(traineeTrackLogging);
-        task.setTraineeVmCount(traineeVmCount);
-        task.setTraineeVmOptions(traineeVmOptions);
+        log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines", traineeSettings.getTraineeVmCount()));
+
+        final SpawnTraineesTask task = new SpawnTraineesTask(traineeSettings);
         submitToAllAndWait(coachExecutor, task);
 
         long durationMs = System.currentTimeMillis() - startMs;
@@ -190,7 +170,7 @@ public class HeadCoach extends Coach {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Hazelcast Heart Attack Coach");
-        System.out.printf("Version: %s\n",getVersion());
+        System.out.printf("Version: %s\n", getVersion());
         File heartAttackHome = getHeartAttackHome();
         System.out.printf("HEART_ATTACK_HOME: %s\n", heartAttackHome);
 
@@ -201,8 +181,8 @@ public class HeadCoach extends Coach {
         OptionSpec<Integer> traineeCountSpec = parser.accepts("traineeVmCount", "Number of trainee VM's per coach")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(1);
         OptionSpec<String> traineeVmOptionsSpec = parser.accepts("traineeVmOptions", "Trainee VM options (quotes can be used)")
-                .withRequiredArg().ofType(String.class).defaultsTo("-Xmx128m -Dlog4j.configuration=file:"+heartAttackHome+File.separator+"conf"+File.separator+"trainee-log4j.xml");
-        OptionSpec <String> traineeHzFileSpec = parser.accepts("traineeHzFile", "The Hazelcast xml configuration file for the trainee")
+                .withRequiredArg().ofType(String.class).defaultsTo("-Xmx128m -Dhazelcast.logging.type=log4j  -Dlog4j.configuration=file:" + heartAttackHome + File.separator + "conf" + File.separator + "trainee-log4j.xml");
+        OptionSpec<String> traineeHzFileSpec = parser.accepts("traineeHzFile", "The Hazelcast xml configuration file for the trainee")
                 .withRequiredArg().ofType(String.class).defaultsTo(heartAttackHome + File.separator + "conf" + File.separator + "trainee-hazelcast.xml");
         OptionSpec<String> coachHzFileSpec = parser.accepts("coachHzFile", "The Hazelcast xml configuration file for the coach")
                 .withRequiredArg().ofType(String.class).defaultsTo(heartAttackHome + File.separator + "conf" + File.separator + "coach-hazelcast.xml");
@@ -229,16 +209,20 @@ public class HeadCoach extends Coach {
 
             HeadCoach coach = new HeadCoach();
             coach.setWorkout(workout);
-            coach.setTraineeTrackLogging(options.has(traineeTrackLoggingSpec));
             coach.setDurationSec(options.valueOf(durationSpec));
-            coach.setTraineeVmOptions(options.valueOf(traineeVmOptionsSpec));
-            coach.setTraineeVmCount(options.valueOf(traineeCountSpec));
+
+            TraineeSettings traineeSettings = new TraineeSettings();
+            coach.setTraineeSettings(traineeSettings);
+
+            traineeSettings.setTraineeTrackLogging(options.has(traineeTrackLoggingSpec));
+            traineeSettings.setTraineeVmOptions(options.valueOf(traineeVmOptionsSpec));
+            traineeSettings.setTraineeVmCount(options.valueOf(traineeCountSpec));
 
             File traineeHzFile = new File(options.valueOf(traineeHzFileSpec));
             if (!traineeHzFile.exists()) {
                 exitWithError(format("Trainee Hazelcast config file [%s] does not exist.\n", traineeHzFile));
             }
-            coach.setTraineeHzFile(traineeHzFile);
+            traineeSettings.setTraineeHzConfig(Utils.asText(traineeHzFile));
 
             File coachHzFile = new File(options.valueOf(coachHzFileSpec));
             if (!coachHzFile.exists()) {

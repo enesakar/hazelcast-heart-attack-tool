@@ -1,9 +1,10 @@
 package com.hazelcast.heartattack;
 
+import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 
-public class Workout {
+public class Workout implements Serializable{
 
     private List<Exercise> exerciseList = new LinkedList<Exercise>();
 
@@ -17,5 +18,12 @@ public class Workout {
 
     public int size() {
         return exerciseList.size();
+    }
+
+    @Override
+    public String toString() {
+        return "Workout{" +
+                "exerciseList=" + exerciseList +
+                '}';
     }
 }

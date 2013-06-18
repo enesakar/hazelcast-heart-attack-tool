@@ -8,5 +8,6 @@ target/
 .DS_Store
 *.log
 *.log.lck
+*.heartattack
 hazelcast-heartattack/trainees/*
 hazelcast-heartattack/logs/*

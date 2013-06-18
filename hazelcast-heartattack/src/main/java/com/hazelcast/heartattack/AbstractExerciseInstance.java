@@ -1,6 +1,7 @@
 package com.hazelcast.heartattack;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IQueue;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -19,6 +20,7 @@ public abstract class AbstractExerciseInstance<E extends Exercise> implements Ex
     protected volatile boolean stop = false;
     private final CountDownLatch startLatch = new CountDownLatch(1);
     private final Set<Thread> threads = new HashSet<Thread>();
+    private IQueue<Object> problemQueue;
 
     public HazelcastInstance getHazelcastInstance() {
         return hazelcastInstance;
@@ -26,6 +28,7 @@ public abstract class AbstractExerciseInstance<E extends Exercise> implements Ex
 
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
+        this.problemQueue = hazelcastInstance.getQueue("problemQueue");
     }
 
     public E getExercise() {
@@ -80,6 +83,7 @@ public abstract class AbstractExerciseInstance<E extends Exercise> implements Ex
                 startLatch.await();
                 runnable.run();
             } catch (Throwable t) {
+               //todo: problemQueue.add();
                 log.log(Level.SEVERE, "Error detected", t);
             }
         }
