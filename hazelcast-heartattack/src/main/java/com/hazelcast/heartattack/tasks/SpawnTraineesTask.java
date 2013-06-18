@@ -48,6 +48,9 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
 
     @Override
     public Object call() throws Exception {
+        log.log(Level.INFO, format("Spawning %s trainees", traineeVmCount));
+        long startMs = System.currentTimeMillis();
+
         try {
             Coach coach = (Coach) hz.getUserContext().get(Coach.KEY_COACH);
 
@@ -95,6 +98,9 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
             for (String traineeId : traineeIds) {
                 waitForTraineeStartup(coach, traineeId);
             }
+
+            long durationMs = System.currentTimeMillis() - startMs;
+            log.log(Level.INFO, format("Spawned %s trainees in %s ms", traineeVmCount, durationMs));
 
             return null;
         } catch (Exception e) {

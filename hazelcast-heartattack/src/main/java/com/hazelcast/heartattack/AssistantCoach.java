@@ -16,6 +16,7 @@ import java.util.logging.Level;
 
 import static com.hazelcast.heartattack.Utils.exitWithError;
 import static com.hazelcast.heartattack.Utils.getHeartAttackHome;
+import static com.hazelcast.heartattack.Utils.getVersion;
 import static java.lang.String.format;
 
 public class AssistantCoach extends Coach {
@@ -50,6 +51,7 @@ public class AssistantCoach extends Coach {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Hazelcast Assistant Coach");
+        System.out.printf("Version: %s\n", getVersion());
         File heartAttackHome = getHeartAttackHome();
         System.out.printf("HEART_ATTACK_HOME: %s\n",heartAttackHome);
 

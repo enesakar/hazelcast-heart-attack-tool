@@ -44,12 +44,8 @@ public abstract class AbstractExercise implements Exercise {
     public String getDescription() {
         return (new ReflectionToStringBuilder(this, ToStringStyle.MULTI_LINE_STYLE) {
             protected boolean accept(Field f) {
-                if(super.accept(f)){
-                    return false;
-                }
-
-                final String name = f.getName();
-                return !name.equals("clazzName") && !!name.equals("id");
+                String name = f.getName();
+                return super.accept(f) && !name.equals("clazzName") && !name.equals("id");
             }
         }).toString();
     }

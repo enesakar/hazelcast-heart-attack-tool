@@ -13,11 +13,11 @@ that will be listened to by the master and he will decide to kill
 
 - in the coach vm not much output is visible
 
+DONE
+
 - version needs to be logged by head coach
 
 - version needs to be logged by assistant coach
-
-DONE
 
 - the content of the exercise is now printed.
 

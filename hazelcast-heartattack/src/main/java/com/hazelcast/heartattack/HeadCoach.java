@@ -190,6 +190,7 @@ public class HeadCoach extends Coach {
 
     public static void main(String[] args) throws Exception {
         System.out.println("Hazelcast Heart Attack Coach");
+        System.out.printf("Version: %s\n",getVersion());
         File heartAttackHome = getHeartAttackHome();
         System.out.printf("HEART_ATTACK_HOME: %s\n", heartAttackHome);
 

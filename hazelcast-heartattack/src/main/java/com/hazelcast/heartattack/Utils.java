@@ -1,8 +1,24 @@
 package com.hazelcast.heartattack;
 
 import java.io.*;
+import java.util.Properties;
 
 public final class Utils {
+
+    public static String getVersion() {
+        String version = "";
+        try {
+            Properties p = new Properties();
+            InputStream is = Utils.class.getResourceAsStream("/META-INF/maven/hazelcast-heartattack/hazelcast-heartattack/pom.properties");
+            if (is != null) {
+                p.load(is);
+                return p.getProperty("version", "");
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        return version;
+    }
 
     public static void write(File file, String text) {
         try {
