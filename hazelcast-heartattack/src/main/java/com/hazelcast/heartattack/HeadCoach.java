@@ -154,7 +154,7 @@ public class HeadCoach extends Coach {
             log.log(Level.INFO, exercise.getDescription());
 
             log.log(Level.INFO, "Exercise initializing");
-            submitToAllAndWait(coachExecutor, new CoachInitExerciceTask(exercise));
+            submitToAllAndWait(coachExecutor, new PrepareCoachForExerciseTask(exercise));
             submitToAllAndWait(traineeExecutor, new InitExerciseTask(exercise));
 
             log.log(Level.INFO, "Exercise global setup");

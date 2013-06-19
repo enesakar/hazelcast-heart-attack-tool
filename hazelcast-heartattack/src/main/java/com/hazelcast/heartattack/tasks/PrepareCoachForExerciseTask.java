@@ -11,18 +11,20 @@ import java.io.Serializable;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
-public class CoachInitExerciceTask implements Callable, Serializable, HazelcastInstanceAware {
-    final static ILogger log = Logger.getLogger(InitExerciseTask.class.getName());
+public class PrepareCoachForExerciseTask implements Callable, Serializable, HazelcastInstanceAware {
+    final static ILogger log = Logger.getLogger(PrepareCoachForExerciseTask.class.getName());
 
     private transient HazelcastInstance hz;
     private final Exercise exercise;
 
-    public CoachInitExerciceTask(Exercise exercise) {
+    public PrepareCoachForExerciseTask(Exercise exercise) {
         this.exercise = exercise;
     }
 
     @Override
     public Object call() throws Exception {
+        log.log(Level.INFO, "Preparing coach for exercise");
+
         try {
             Coach coach = (Coach) hz.getUserContext().get(Coach.KEY_COACH);
             coach.setExercise(exercise);
