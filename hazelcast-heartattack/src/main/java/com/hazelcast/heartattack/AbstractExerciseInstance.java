@@ -20,7 +20,6 @@ public abstract class AbstractExerciseInstance<E extends Exercise> implements Ex
     protected volatile boolean stop = false;
     private final CountDownLatch startLatch = new CountDownLatch(1);
     private final Set<Thread> threads = new HashSet<Thread>();
-    private IQueue<Object> problemQueue;
 
     public HazelcastInstance getHazelcastInstance() {
         return hazelcastInstance;
@@ -28,7 +27,6 @@ public abstract class AbstractExerciseInstance<E extends Exercise> implements Ex
 
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
-        this.problemQueue = hazelcastInstance.getQueue("problemQueue");
     }
 
     public E getExercise() {
@@ -83,8 +81,10 @@ public abstract class AbstractExerciseInstance<E extends Exercise> implements Ex
                 startLatch.await();
                 runnable.run();
             } catch (Throwable t) {
-               //todo: problemQueue.add();
                 log.log(Level.SEVERE, "Error detected", t);
+                //give the logger some time to write everything to disk if needed.
+                Utils.sleepSeconds(2);
+                System.exit(-1);
             }
         }
     }

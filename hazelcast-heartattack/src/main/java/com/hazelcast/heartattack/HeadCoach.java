@@ -5,10 +5,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.core.*;
-import com.hazelcast.heartattack.tasks.DestroyTraineesTask;
-import com.hazelcast.heartattack.tasks.GenericExerciseTask;
-import com.hazelcast.heartattack.tasks.InitExerciseTask;
-import com.hazelcast.heartattack.tasks.SpawnTraineesTask;
+import com.hazelcast.heartattack.tasks.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import joptsimple.OptionException;
@@ -17,9 +14,7 @@ import joptsimple.OptionSet;
 import joptsimple.OptionSpec;
 
 import java.io.File;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -32,9 +27,11 @@ public class HeadCoach extends Coach {
     final static ILogger log = Logger.getLogger(HeadCoach.class.getName());
 
     private IExecutorService coachExecutor;
-    private int durationSec;
+    private int durationSec = 60;
     private Workout workout;
-    private TraineeSettings traineeSettings;
+    private TraineeSettings traineeSettings = new TraineeSettings();
+    private Boolean failFast = true;
+    private List<HeartAttack> heartAttacks = Collections.synchronizedList(new LinkedList<HeartAttack>());
 
     public void setWorkout(Workout workout) {
         this.workout = workout;
@@ -60,61 +57,104 @@ public class HeadCoach extends Coach {
         this.traineeSettings = traineeSettings;
     }
 
-    private void run() throws InterruptedException, ExecutionException {
-        System.out.printf("Exercises: %s\n", workout.size());
-        System.out.printf("Expected running time: %s seconds\n", workout.size() * durationSec);
-        System.out.printf("Trainee's per coach: %s\n", traineeSettings.getTraineeVmCount());
-        System.out.printf("Trainee track logging: %s\n", traineeSettings.isTrackLogging());
+    public void setFailFast(Boolean failFast) {
+        this.failFast = failFast;
+    }
 
+    public Boolean getFailFast() {
+        return failFast;
+    }
 
-        createCoachHazelcastInstance();
+    private void run() throws Exception {
+        log.log(Level.INFO, format("Trainee track logging: %s", traineeSettings.isTrackLogging()));
+        log.log(Level.INFO, format("Trainee's per coach: %s", traineeSettings.getTraineeCount()));
+
+        initCoachHazelcastInstance();
+
+        Set<Member> members = coachHz.getCluster().getMembers();
+        log.log(Level.INFO, format("Total number of coaches: %s", members.size()));
+        log.log(Level.INFO, format("Total number of trainees: %s", members.size() * traineeSettings.getTraineeCount()));
 
         new Thread() {
             public void run() {
-                try {
-                    System.out.println(heartAttackQueue.take());
-                } catch (Exception e) {
+                for (; ; ) {
+                    try {
+                        final HeartAttack heartAttack = heartAttackQueue.take();
+                        log.log(Level.SEVERE, heartAttack.toString());
+                        heartAttacks.add(heartAttack);
+                    } catch (Exception e) {
+                    }
                 }
             }
         }.start();
 
         coachExecutor = coachHz.getExecutorService("Coach:Executor");
 
-        signalHeadCoachAvailable();
-
-        long startMs = runWorkout();
-
-        long elapsedMs = System.currentTimeMillis() - startMs;
-        System.out.printf("Total running time: %s seconds\n", elapsedMs / 1000);
-    }
-
-    private long runWorkout() throws InterruptedException, ExecutionException {
-        log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines", traineeSettings.getTraineeVmCount()));
-
         long startMs = System.currentTimeMillis();
 
-        submitToAllAndWait(coachExecutor, new SpawnTraineesTask(traineeSettings));
+        runWorkout();
 
-        long durationMs = System.currentTimeMillis() - startMs;
-        log.log(Level.INFO, (format("Trainee Java Virtual Machines have started after %s ms\n", durationMs)));
+        long elapsedMs = System.currentTimeMillis() - startMs;
+        log.log(Level.INFO, format("Total running time: %s seconds", elapsedMs / 1000));
+
+        if (heartAttacks.isEmpty()) {
+            log.log(Level.INFO, "No heart attacks have been detected!");
+            System.exit(0);
+        } else {
+            log.log(Level.SEVERE, "Heart attacks have been detected!");
+            for (HeartAttack heartAttack : heartAttacks) {
+                log.log(Level.SEVERE, format("\t%s", heartAttack));
+            }
+            System.exit(1);
+        }
+    }
+
+    private void runWorkout() throws Exception {
+        log.log(Level.INFO, format("Exercises in workout: %s", workout.size()));
+        log.log(Level.INFO, format("Running time per exercise: %s seconds", durationSec));
+        log.log(Level.INFO, format("Expected total workout time: %s seconds", workout.size() * durationSec));
+
+
+        //we need to make sure that before we start, there are no trainees running anymore.
+        //log.log(Level.INFO, "Ensuring trainee all killed");
+        //stopTrainees();
+        startTrainees();
 
         for (Exercise exercise : workout.getExerciseList()) {
-            run(exercise);
-            if(traineeSettings.isRefreshJvm()){
-                submitToAllAndWait(coachExecutor, new DestroyTraineesTask());
-                submitToAllAndWait(coachExecutor, new SpawnTraineesTask(traineeSettings));
+            boolean success = run(exercise);
+            if (!success && failFast) {
+                log.log(Level.INFO, "Aborting working due to failure");
+                break;
+            }
+
+            if (!success || traineeSettings.isRefreshJvm()) {
+                stopTrainees();
+                startTrainees();
             }
         }
 
+        stopTrainees();
+    }
+
+    private void stopTrainees() throws Exception {
         submitToAllAndWait(coachExecutor, new DestroyTraineesTask());
+    }
+
+    private long startTrainees() throws Exception {
+        long startMs = System.currentTimeMillis();
+        log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines", traineeSettings.getTraineeCount()));
+        submitToAllAndWait(coachExecutor, new SpawnTraineesTask(traineeSettings));
+        long durationMs = System.currentTimeMillis() - startMs;
+        log.log(Level.INFO, (format("Trainee Java Virtual Machines have started after %s ms\n", durationMs)));
         return startMs;
     }
 
-    private void run(Exercise exercise) {
+    private boolean run(Exercise exercise) {
         try {
             log.log(Level.INFO, exercise.getDescription());
 
             log.log(Level.INFO, "Exercise initializing");
+            submitToAllAndWait(coachExecutor, new CoachInitExerciceTask(exercise));
             submitToAllAndWait(traineeExecutor, new InitExerciseTask(exercise));
 
             log.log(Level.INFO, "Exercise global setup");
@@ -143,8 +183,10 @@ public class HeadCoach extends Coach {
 
             log.log(Level.INFO, "Exercise global tear down");
             submitToOneAndWait(new GenericExerciseTask("globalTearDown"));
+            return false;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed", e);
+            return true;
         }
     }
 
@@ -163,25 +205,11 @@ public class HeadCoach extends Coach {
         }
     }
 
-    private void signalHeadCoachAvailable() {
-        ILock lock = coachHz.getLock(COACH_HEAD_COACH_LOCK);
-        lock.lock();
-        ICondition condition = lock.newCondition(COACH_HEAD_COACH_CONDITION);
-        IAtomicLong available = coachHz.getAtomicLong(COACH_HEAD_COACH_COUNT);
+      public static void main(String[] args) throws Exception {
 
-        try {
-            available.incrementAndGet();
-            condition.signalAll();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    public static void main(String[] args) throws Exception {
-        System.out.println("Hazelcast Heart Attack Coach");
-        System.out.printf("Version: %s\n", getVersion());
-        File heartAttackHome = getHeartAttackHome();
-        System.out.printf("HEART_ATTACK_HOME: %s\n", heartAttackHome);
+        log.log(Level.INFO, "Hazelcast Heart Attack Coach");
+        log.log(Level.INFO, format("Version: %s", getVersion()));
+        log.log(Level.INFO, format("HEART_ATTACK_HOME: %s", heartAttackHome));
 
         OptionParser parser = new OptionParser();
         OptionSpec<Integer> durationSpec = parser.accepts("duration", "Number of seconds to run per workout)")
@@ -191,6 +219,8 @@ public class HeadCoach extends Coach {
                 .withRequiredArg().ofType(Integer.class).defaultsTo(1);
         OptionSpec<Boolean> traineeRefreshSpec = parser.accepts("traineeFresh", "If the trainee VM's should be replaced after every workout")
                 .withRequiredArg().ofType(Boolean.class).defaultsTo(false);
+        OptionSpec<Boolean> failFastSpec = parser.accepts("failFast", "It the workout should fail immediately when an exercise from a workout fails instead of continuing ")
+                .withRequiredArg().ofType(Boolean.class).defaultsTo(true);
         OptionSpec<String> traineeVmOptionsSpec = parser.accepts("traineeVmOptions", "Trainee VM options (quotes can be used)")
                 .withRequiredArg().ofType(String.class).defaultsTo("-Xmx128m -Dhazelcast.logging.type=log4j  -Dlog4j.configuration=file:" + heartAttackHome + File.separator + "conf" + File.separator + "trainee-log4j.xml");
         OptionSpec<String> traineeHzFileSpec = parser.accepts("traineeHzFile", "The Hazelcast xml configuration file for the trainee")
@@ -221,20 +251,19 @@ public class HeadCoach extends Coach {
             HeadCoach coach = new HeadCoach();
             coach.setWorkout(workout);
             coach.setDurationSec(options.valueOf(durationSpec));
+            coach.setFailFast(options.valueOf(failFastSpec));
 
             File traineeHzFile = new File(options.valueOf(traineeHzFileSpec));
             if (!traineeHzFile.exists()) {
                 exitWithError(format("Trainee Hazelcast config file [%s] does not exist.\n", traineeHzFile));
             }
 
-            TraineeSettings traineeSettings = new TraineeSettings();
+            TraineeSettings traineeSettings = coach.getTraineeSettings();
             traineeSettings.setTrackLogging(options.has(traineeTrackLoggingSpec));
             traineeSettings.setVmOptions(options.valueOf(traineeVmOptionsSpec));
-            traineeSettings.setTraineeVmCount(options.valueOf(traineeCountSpec));
+            traineeSettings.setTraineeCount(options.valueOf(traineeCountSpec));
             traineeSettings.setHzConfig(Utils.asText(traineeHzFile));
             traineeSettings.setRefreshJvm(options.valueOf(traineeRefreshSpec));
-
-            coach.setTraineeSettings(traineeSettings);
 
             File coachHzFile = new File(options.valueOf(coachHzFileSpec));
             if (!coachHzFile.exists()) {
@@ -265,5 +294,6 @@ public class HeadCoach extends Coach {
         workout.getExerciseList().addAll(exercises);
         return workout;
     }
+
 
 }

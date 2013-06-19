@@ -3,7 +3,7 @@ package com.hazelcast.heartattack.tasks;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.heartattack.Coach;
-import com.hazelcast.heartattack.TraineeSettings;
+import com.hazelcast.heartattack.Exercise;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -11,31 +11,24 @@ import java.io.Serializable;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
-import static java.lang.String.format;
-
-public class SpawnTraineesTask implements Callable, Serializable, HazelcastInstanceAware {
+public class CoachInitExerciceTask implements Callable, Serializable, HazelcastInstanceAware {
     final static ILogger log = Logger.getLogger(InitExerciseTask.class.getName());
 
     private transient HazelcastInstance hz;
-    private final TraineeSettings settings;
+    private final Exercise exercise;
 
-    public SpawnTraineesTask(TraineeSettings settings) {
-        this.settings = settings;
+    public CoachInitExerciceTask(Exercise exercise) {
+        this.exercise = exercise;
     }
 
     @Override
     public Object call() throws Exception {
-        log.log(Level.INFO, format("Spawning %s trainees", settings.getTraineeCount()));
-        long startMs = System.currentTimeMillis();
-
         try {
             Coach coach = (Coach) hz.getUserContext().get(Coach.KEY_COACH);
-            coach.spawnTrainees(settings);
-            long durationMs = System.currentTimeMillis() - startMs;
-            log.log(Level.INFO, format("Spawned %s trainees in %s ms", settings.getTraineeCount(), durationMs));
+            coach.setExercise(exercise);
             return null;
         } catch (Exception e) {
-            log.log(Level.SEVERE, "Failed to spawn Trainee Virtual Machines", e);
+            log.log(Level.SEVERE, "Failed to init coach Exercise", e);
             throw e;
         }
     }
@@ -44,5 +37,4 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
     public void setHazelcastInstance(HazelcastInstance hz) {
         this.hz = hz;
     }
-
 }

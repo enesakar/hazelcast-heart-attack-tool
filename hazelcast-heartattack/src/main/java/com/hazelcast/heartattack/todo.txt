@@ -12,11 +12,11 @@ TODO
 
 - better location to store the heartattack files
 
-- when a worker encounters an error, it should also produce a heart attack file.
-
 - when a heart attack of one of the trainees is encountered..  something should be done.
     - Currently the test aborts.
     - Start the next workout.
+
+- when response times for workers are too big: heart attack
 
 - something should be done with the pid
 
@@ -24,7 +24,22 @@ TODO
 
 - it should be possible to chain multiple workouts
 
+- a heart attack should be connected to a particular exercise
+
+
 DONE
+
+- removal of the waiting mechanism; not needed.
+
+- assistent coaches can't be reused at the moment.
+
+- when a worker encounters an error, it should also produce a heart attack file.
+
+- when a workout starts, the coaches should be cleaned first.
+
+- option to fail immediately when a workout fails
+
+- when a trainee process exits abnormally, a heart attack should happen
 
 - setting to create a trainees per work out or to reuse them
 

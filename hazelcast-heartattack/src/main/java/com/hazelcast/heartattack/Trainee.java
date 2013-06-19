@@ -9,6 +9,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.io.FileNotFoundException;
+import java.net.InetSocketAddress;
 import java.util.logging.Level;
 
 public class Trainee {
@@ -20,7 +21,7 @@ public class Trainee {
 
     private String traineeId;
     private HazelcastInstance hz;
-    private IMap<Object, Object> map;
+    private IMap<String, InetSocketAddress> map;
     private String traineeHzFile;
 
     public void setTraineeId(String traineeId) {
@@ -34,7 +35,7 @@ public class Trainee {
     public void start() {
         this.hz = createHazelcastInstance();
         this.map = hz.getMap(TRAINEE_PARTICIPANT_MAP);
-        this.map.put(traineeId, traineeId);
+        this.map.put(traineeId, hz.getCluster().getLocalMember().getInetSocketAddress());
     }
 
     public HazelcastInstance createHazelcastInstance() {

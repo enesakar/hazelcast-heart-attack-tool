@@ -33,12 +33,12 @@ public class TraineeSettings implements Serializable{
         this.trackLogging = trackLogging;
     }
 
-    public int getTraineeVmCount() {
+    public int getTraineeCount() {
         return traineeCount;
     }
 
-    public void setTraineeVmCount(int traineeVmCount) {
-        this.traineeCount = traineeVmCount;
+    public void setTraineeCount(int traineeCount) {
+        this.traineeCount = traineeCount;
     }
 
     public String getVmOptions() {

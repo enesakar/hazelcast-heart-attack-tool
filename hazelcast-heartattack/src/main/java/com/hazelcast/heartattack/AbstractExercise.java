@@ -49,4 +49,9 @@ public abstract class AbstractExercise implements Exercise {
             }
         }).toString();
     }
+
+    @Override
+    public String toString() {
+        return getDescription();
+    }
 }
