@@ -10,8 +10,6 @@ TODO
 
 - in the coach vm not much output is visible
 
-- better location to store the heartattack files
-
 - when a heart attack of one of the trainees is encountered..  something should be done.
     - Currently the test aborts.
     - Start the next workout.
@@ -24,10 +22,13 @@ TODO
 
 - it should be possible to chain multiple workouts
 
-- a heart attack should be connected to a particular exercise
-
-
 DONE
+
+- when a heart attack happens, all coaches should see it.
+
+- better location to store the heartattack files
+
+- a heart attack should be connected to a particular exercise
 
 - removal of the waiting mechanism; not needed.
 

@@ -34,6 +34,7 @@ public abstract class Coach {
     public final static File userDir = new File(System.getProperty("user.dir"));
     public final static String classpath = System.getProperty("java.class.path");
     public final static File heartAttackHome = getHeartAttackHome();
+    public final static File traineesHome = new File(getHeartAttackHome(),"trainees");
 
     protected File coachHzFile;
     protected volatile HazelcastInstance coachHz;
@@ -114,27 +115,25 @@ public abstract class Coach {
                 return null;
             }
 
-            MemberImpl memberImpl = findMember(jvm);
-            if (memberImpl == null) {
-                return new HeartAttack("membership failure (member missing)",
+            Member member = findMember(jvm);
+            if (member == null) {
+                jvm.getProcess().destroy();
+                return new HeartAttack("Hazelcast membership failure (member missing)",
                         coachHz.getCluster().getLocalMember().getInetSocketAddress(),
                         jvm.getAddress(),
                         jvm.getId(),
                         exercise);
             }
 
-
             return null;
         }
 
-        private MemberImpl findMember(TraineeJvm jvm) {
+        private Member findMember(TraineeJvm jvm) {
             if (traineeClient == null) return null;
 
             for (Member member : traineeClient.getCluster().getMembers()) {
                 if (member.getInetSocketAddress().equals(jvm.getAddress())) {
-                    if (member instanceof MemberImpl) {
-                        return (MemberImpl) member;
-                    }
+                    return member;
                 }
             }
 
@@ -142,7 +141,7 @@ public abstract class Coach {
         }
 
         private HeartAttack detectHeartAttackFile(TraineeJvm jvm) {
-            File file = new File(jvm.getId() + ".heartattack");
+            File file = new File(traineesHome, jvm.getId() + ".heartattack");
             if (!file.exists()) {
                 return null;
             }
@@ -153,11 +152,6 @@ public abstract class Coach {
                     jvm.getId(),
                     exercise);
             jvm.getProcess().destroy();
-            try {
-                jvm.getProcess().waitFor();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             return heartAttack;
         }
 
@@ -219,6 +213,7 @@ public abstract class Coach {
         List<String> args = new LinkedList<String>();
         args.add("java");
         args.add(format("-XX:OnOutOfMemoryError=\"\"touch %s.heartattack\"\"", traineeId));
+        args.add("-DHEART_ATTACK_HOME="+getHeartAttackHome());
         args.add("-cp");
         args.add(classpath);
         args.addAll(Arrays.asList(clientVmOptionsArray));
@@ -227,7 +222,7 @@ public abstract class Coach {
         args.add(traineeHzFile.getAbsolutePath());
 
         ProcessBuilder processBuilder = new ProcessBuilder(args.toArray(new String[args.size()]))
-                .directory(userDir)
+                .directory(traineesHome)
                 .redirectErrorStream(true);
         Process process = processBuilder.start();
         final TraineeJvm traineeJvm = new TraineeJvm(traineeId, process);

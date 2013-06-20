@@ -80,7 +80,7 @@ public class HeadCoach extends Coach {
                 for (; ; ) {
                     try {
                         final HeartAttack heartAttack = heartAttackQueue.take();
-                        log.log(Level.SEVERE, heartAttack.toString());
+                        submitToAllAndWait(coachExecutor, new EchoHeartAttack(heartAttack));
                         heartAttacks.add(heartAttack);
                     } catch (Exception e) {
                     }
@@ -137,13 +137,13 @@ public class HeadCoach extends Coach {
     }
 
     private void stopTrainees() throws Exception {
-        submitToAllAndWait(coachExecutor, new DestroyTraineesTask());
+        submitToAllAndWait(coachExecutor, new DestroyTrainees());
     }
 
     private long startTrainees() throws Exception {
         long startMs = System.currentTimeMillis();
         log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines", traineeSettings.getTraineeCount()));
-        submitToAllAndWait(coachExecutor, new SpawnTraineesTask(traineeSettings));
+        submitToAllAndWait(coachExecutor, new SpawnTrainees(traineeSettings));
         long durationMs = System.currentTimeMillis() - startMs;
         log.log(Level.INFO, (format("Trainee Java Virtual Machines have started after %s ms\n", durationMs)));
         return startMs;
@@ -154,8 +154,8 @@ public class HeadCoach extends Coach {
             log.log(Level.INFO, exercise.getDescription());
 
             log.log(Level.INFO, "Exercise initializing");
-            submitToAllAndWait(coachExecutor, new PrepareCoachForExerciseTask(exercise));
-            submitToAllAndWait(traineeExecutor, new InitExerciseTask(exercise));
+            submitToAllAndWait(coachExecutor, new PrepareCoachForExercise(exercise));
+            submitToAllAndWait(traineeExecutor, new InitExercise(exercise));
 
             log.log(Level.INFO, "Exercise global setup");
             submitToOneAndWait(new GenericExerciseTask("globalSetup"));

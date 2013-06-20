@@ -12,8 +12,8 @@ import java.util.logging.Level;
 
 import static java.lang.String.format;
 
-public class DestroyTraineesTask implements Callable, Serializable, HazelcastInstanceAware {
-    final static ILogger log = Logger.getLogger(DestroyTraineesTask.class.getName());
+public class DestroyTrainees implements Callable, Serializable, HazelcastInstanceAware {
+    final static ILogger log = Logger.getLogger(DestroyTrainees.class.getName());
 
     private HazelcastInstance hz;
 

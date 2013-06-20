@@ -13,26 +13,23 @@ import java.util.logging.Level;
 
 import static java.lang.String.format;
 
-public class SpawnTraineesTask implements Callable, Serializable, HazelcastInstanceAware {
-    final static ILogger log = Logger.getLogger(InitExerciseTask.class.getName());
+public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceAware {
+    final static ILogger log = Logger.getLogger(SpawnTrainees.class.getName());
 
     private transient HazelcastInstance hz;
     private final TraineeSettings settings;
 
-    public SpawnTraineesTask(TraineeSettings settings) {
+    public SpawnTrainees(TraineeSettings settings) {
         this.settings = settings;
     }
 
     @Override
     public Object call() throws Exception {
         log.log(Level.INFO, format("Spawning %s trainees", settings.getTraineeCount()));
-        long startMs = System.currentTimeMillis();
 
         try {
             Coach coach = (Coach) hz.getUserContext().get(Coach.KEY_COACH);
             coach.spawnTrainees(settings);
-            long durationMs = System.currentTimeMillis() - startMs;
-            log.log(Level.INFO, format("Spawned %s trainees in %s ms", settings.getTraineeCount(), durationMs));
             return null;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed to spawn Trainee Virtual Machines", e);
@@ -44,5 +41,4 @@ public class SpawnTraineesTask implements Callable, Serializable, HazelcastInsta
     public void setHazelcastInstance(HazelcastInstance hz) {
         this.hz = hz;
     }
-
 }

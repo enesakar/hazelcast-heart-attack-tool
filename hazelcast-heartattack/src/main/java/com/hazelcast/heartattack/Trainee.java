@@ -14,8 +14,6 @@ import java.util.logging.Level;
 
 public class Trainee {
 
-    final static ILogger log = Logger.getLogger(Trainee.class.getName());
-
     public static final String TRAINEE_PARTICIPANT_MAP = "Trainee:ParticipantMap";
     public static final String TRAINEE_EXECUTOR = "Trainee:Executor";
 
@@ -51,12 +49,12 @@ public class Trainee {
     }
 
     public static void main(String[] args) {
-        log.log(Level.INFO, "Starting Hazelcast Heart Attack Trainee");
+        System.out.println("Starting Hazelcast Heart Attack Trainee");
 
         String traineeId = args[0];
-        log.log(Level.INFO, "Trainee id:" + traineeId);
+        System.out.println("Trainee id:" + traineeId);
         String traineeHzFile = args[1];
-        log.log(Level.INFO, "Trainee hz config file:" + traineeHzFile);
+        System.out.println("Trainee hz config file:" + traineeHzFile);
 
         System.setProperty("traineeId",traineeId);
 
@@ -65,6 +63,6 @@ public class Trainee {
         trainee.setTraineeHzFile(traineeHzFile);
         trainee.start();
 
-        log.log(Level.INFO, "Successfully started Hazelcast Heart Attack Trainee");
+        System.out.println( "Successfully started Hazelcast Heart Attack Trainee");
     }
 }

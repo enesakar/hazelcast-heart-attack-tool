@@ -47,13 +47,20 @@ public class HeartAttack implements Serializable {
 
     @Override
     public String toString() {
-        return "HeartAttack{" +
-                "  message='" + message + '\'' +
-                ", coachAddress=" + coachAddress +
-                ", time=" + time +
-                ", traineeAddress=" + traineeAddress +
-                ", traineeId='" + traineeId + '\'' +
-                ", exercise=" + exercise +
-                '}';
+        String[] exerciseString = exercise.toString().split("\n");
+
+        StringBuffer sb = new StringBuffer();
+        sb.append("HeartAttack[\n");
+        sb.append("   message='").append(message).append("'\n");
+        sb.append("   coachAddress=").append(coachAddress).append("\n");
+        sb.append("   time=").append(time).append("\n");
+        sb.append("   traineeAddress=").append(traineeAddress).append("\n");
+        sb.append("   traineeId=").append(traineeId).append("\n");
+        sb.append("   exercise=").append(exerciseString[0]).append("\n");
+        for(int k=1;k<exerciseString.length;k++){
+            sb.append("    ").append(exerciseString[k]).append("\n");
+        }
+        sb.append("]");
+        return sb.toString();
     }
 }
