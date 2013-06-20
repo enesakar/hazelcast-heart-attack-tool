@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.hazelcast.core.*;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
+import com.hazelcast.core.Member;
 import com.hazelcast.heartattack.tasks.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -205,8 +207,7 @@ public class HeadCoach extends Coach {
         }
     }
 
-      public static void main(String[] args) throws Exception {
-
+    public static void main(String[] args) throws Exception {
         log.log(Level.INFO, "Hazelcast Heart Attack Coach");
         log.log(Level.INFO, format("Version: %s", getVersion()));
         log.log(Level.INFO, format("HEART_ATTACK_HOME: %s", heartAttackHome));
@@ -222,7 +223,7 @@ public class HeadCoach extends Coach {
         OptionSpec<Boolean> failFastSpec = parser.accepts("failFast", "It the workout should fail immediately when an exercise from a workout fails instead of continuing ")
                 .withRequiredArg().ofType(Boolean.class).defaultsTo(true);
         OptionSpec<String> traineeVmOptionsSpec = parser.accepts("traineeVmOptions", "Trainee VM options (quotes can be used)")
-                .withRequiredArg().ofType(String.class).defaultsTo("-Xmx128m -Dhazelcast.logging.type=log4j  -Dlog4j.configuration=file:" + heartAttackHome + File.separator + "conf" + File.separator + "trainee-log4j.xml");
+                .withRequiredArg().ofType(String.class).defaultsTo("");
         OptionSpec<String> traineeHzFileSpec = parser.accepts("traineeHzFile", "The Hazelcast xml configuration file for the trainee")
                 .withRequiredArg().ofType(String.class).defaultsTo(heartAttackHome + File.separator + "conf" + File.separator + "trainee-hazelcast.xml");
         OptionSpec<String> coachHzFileSpec = parser.accepts("coachHzFile", "The Hazelcast xml configuration file for the coach")

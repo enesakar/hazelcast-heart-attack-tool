@@ -5,7 +5,6 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -186,7 +185,7 @@ public abstract class Coach {
 
             trainees.add(trainee);
 
-            new LoggingThread(traineeId, process.getInputStream(), settings.isTrackLogging()).start();
+            new TraineeLogger(traineeId, process.getInputStream(), settings.isTrackLogging()).start();
         }
 
         Config config = new XmlConfigBuilder(traineeHzFile.getAbsolutePath()).build();
@@ -202,9 +201,13 @@ public abstract class Coach {
         }
     }
 
+
+
     private TraineeJvm startTraineeJvm(String traineeVmOptions, File traineeHzFile) throws IOException {
         String traineeId = "" + System.currentTimeMillis();
 
+        //we need to configure the logging options for the traineevm
+        traineeVmOptions+=" -Dhazelcast.logging.type=log4j  -Dlog4j.configuration=file:" + heartAttackHome + File.separator + "conf" + File.separator + "trainee-log4j.xml";
         String[] clientVmOptionsArray = new String[]{};
         if (traineeVmOptions != null && !traineeVmOptions.trim().isEmpty()) {
             clientVmOptionsArray = traineeVmOptions.split("\\s+");
