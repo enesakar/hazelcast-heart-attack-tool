@@ -13,10 +13,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 
 import static com.hazelcast.heartattack.Utils.closeQuietly;
@@ -211,14 +208,10 @@ public abstract class Coach {
 
         String javaHome = System.getProperty("java.home");
         log.log(Level.INFO,"java.home="+javaHome);
-        File java = new File(javaHome + File.separator + "bin" + File.separator + "java");
-        if (!java.exists()) {
-            java = new File(javaHome + File.separator + "java");
-        }
 
         List<String> args = new LinkedList<String>();
-        args.add(java.getAbsolutePath());
-        args.add(format("-XX:OnOutOfMemoryError=\"\"touch %s.heartattack\"\"", traineeId));
+        args.add("java");
+        args.add(format("-XX:OnOutOfMemoryError=\"\"touch %s/trainees/%s.heartattack\"\"", heartAttackHome,traineeId));
         args.add("-DHEART_ATTACK_HOME=" + getHeartAttackHome());
         args.add("-Dhazelcast.logging.type=log4j");
         args.add("-Dlog4j.configuration=file:" + heartAttackHome + File.separator + "conf" + File.separator + "trainee-log4j.xml");
@@ -230,8 +223,9 @@ public abstract class Coach {
         args.add(traineeHzFile.getAbsolutePath());
 
         ProcessBuilder processBuilder = new ProcessBuilder(args.toArray(new String[args.size()]))
-                .directory(traineesHome)
+                .directory(new File(javaHome,"bin"))
                 .redirectErrorStream(true);
+
         Process process = processBuilder.start();
         final TraineeJvm traineeJvm = new TraineeJvm(traineeId, process);
         traineeJvms.add(traineeJvm);
