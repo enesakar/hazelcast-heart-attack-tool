@@ -19,7 +19,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 
-import static com.hazelcast.heartattack.Utils.*;
+import static com.hazelcast.heartattack.Utils.closeQuietly;
+import static com.hazelcast.heartattack.Utils.getHeartAttackHome;
 import static java.lang.String.format;
 
 public abstract class Coach {
@@ -208,9 +209,13 @@ public abstract class Coach {
             clientVmOptionsArray = traineeVmOptions.split("\\s+");
         }
 
-        String java = System.getProperties().getProperty("java.home") + File.separator + "bin" + File.separator + "java";
+        File java = new File(System.getProperty("java.home") + File.separator + "bin" + File.separator + "java");
+        if (!java.exists()) {
+            java = new File(System.getProperty("java.home") + File.separator + "java");
+        }
+
         List<String> args = new LinkedList<String>();
-        args.add(java);
+        args.add(java.getAbsolutePath());
         args.add(format("-XX:OnOutOfMemoryError=\"\"touch %s.heartattack\"\"", traineeId));
         args.add("-DHEART_ATTACK_HOME=" + getHeartAttackHome());
         args.add("-Dhazelcast.logging.type=log4j");
