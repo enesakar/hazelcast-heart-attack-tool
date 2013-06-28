@@ -208,7 +208,7 @@ public abstract class Coach {
             clientVmOptionsArray = traineeVmOptions.split("\\s+");
         }
 
-        String java = System.getProperties().getProperty("java.home") + File.pathSeparator + "bin" + File.pathSeparator + "java";
+        String java = System.getProperties().getProperty("java.home") + File.separator + "bin" + File.separator + "java";
         List<String> args = new LinkedList<String>();
         args.add(java);
         args.add(format("-XX:OnOutOfMemoryError=\"\"touch %s.heartattack\"\"", traineeId));
