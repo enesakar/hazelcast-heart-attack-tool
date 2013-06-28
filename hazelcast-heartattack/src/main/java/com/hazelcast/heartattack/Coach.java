@@ -209,9 +209,11 @@ public abstract class Coach {
             clientVmOptionsArray = traineeVmOptions.split("\\s+");
         }
 
-        File java = new File(System.getProperty("java.home") + File.separator + "bin" + File.separator + "java");
+        String javaHome = System.getProperty("java.home");
+        log.log(Level.INFO,"java.home="+javaHome);
+        File java = new File(javaHome + File.separator + "bin" + File.separator + "java");
         if (!java.exists()) {
-            java = new File(System.getProperty("java.home") + File.separator + "java");
+            java = new File(javaHome + File.separator + "java");
         }
 
         List<String> args = new LinkedList<String>();
