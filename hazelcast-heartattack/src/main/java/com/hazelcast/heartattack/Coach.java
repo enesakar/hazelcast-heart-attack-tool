@@ -19,8 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 
-import static com.hazelcast.heartattack.Utils.closeQuietly;
-import static com.hazelcast.heartattack.Utils.getHeartAttackHome;
+import static com.hazelcast.heartattack.Utils.*;
 import static java.lang.String.format;
 
 public abstract class Coach {
@@ -33,7 +32,7 @@ public abstract class Coach {
     public final static File userDir = new File(System.getProperty("user.dir"));
     public final static String classpath = System.getProperty("java.class.path");
     public final static File heartAttackHome = getHeartAttackHome();
-    public final static File traineesHome = new File(getHeartAttackHome(),"trainees");
+    public final static File traineesHome = new File(getHeartAttackHome(), "trainees");
 
     protected File coachHzFile;
     protected volatile HazelcastInstance coachHz;
@@ -201,13 +200,9 @@ public abstract class Coach {
         }
     }
 
-
-
     private TraineeJvm startTraineeJvm(String traineeVmOptions, File traineeHzFile) throws IOException {
         String traineeId = "" + System.currentTimeMillis();
 
-        //we need to configure the logging options for the traineevm
-        traineeVmOptions+=" -Dhazelcast.logging.type=log4j  -Dlog4j.configuration=file:" + heartAttackHome + File.separator + "conf" + File.separator + "trainee-log4j.xml";
         String[] clientVmOptionsArray = new String[]{};
         if (traineeVmOptions != null && !traineeVmOptions.trim().isEmpty()) {
             clientVmOptionsArray = traineeVmOptions.split("\\s+");
@@ -216,7 +211,9 @@ public abstract class Coach {
         List<String> args = new LinkedList<String>();
         args.add("java");
         args.add(format("-XX:OnOutOfMemoryError=\"\"touch %s.heartattack\"\"", traineeId));
-        args.add("-DHEART_ATTACK_HOME="+getHeartAttackHome());
+        args.add("-DHEART_ATTACK_HOME=" + getHeartAttackHome());
+        args.add("-Dhazelcast.logging.type=log4j");
+        args.add("-Dlog4j.configuration=file:" + heartAttackHome + File.separator + "conf" + File.separator + "trainee-log4j.xml");
         args.add("-cp");
         args.add(classpath);
         args.addAll(Arrays.asList(clientVmOptionsArray));
@@ -256,9 +253,9 @@ public abstract class Coach {
 
 
     public void destroyTrainees() {
-        if (traineeClient != null)
+        if (traineeClient != null) {
             traineeClient.getLifecycleService().shutdown();
-
+        }
 
         for (TraineeJvm jvm : traineeJvms) {
             jvm.getProcess().destroy();
@@ -269,11 +266,10 @@ public abstract class Coach {
             try {
                 exitCode = jvm.getProcess().waitFor();
             } catch (InterruptedException e) {
-                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
             }
 
             if (exitCode != 0) {
-                log.log(Level.INFO, format("trainee process exited with exit code: ", exitCode));
+                log.log(Level.INFO, format("trainee process exited with exit code: %s", exitCode));
             }
         }
         traineeJvms.clear();

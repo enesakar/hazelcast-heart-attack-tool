@@ -22,6 +22,9 @@ TODO
 
 - it should be possible to chain multiple workouts
 
+- when extra jars are going to be provided, they should be uploaded to the coach vm. A coach should just keep running,
+no need to stop it.
+
 DONE
 
 - when a heart attack happens, all coaches should see it.

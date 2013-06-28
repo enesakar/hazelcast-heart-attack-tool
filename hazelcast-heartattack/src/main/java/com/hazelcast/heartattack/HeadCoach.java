@@ -103,10 +103,14 @@ public class HeadCoach extends Coach {
             log.log(Level.INFO, "No heart attacks have been detected!");
             System.exit(0);
         } else {
-            log.log(Level.SEVERE, "Heart attacks have been detected!");
+            StringBuilder sb = new StringBuilder();
+            sb.append(heartAttacks.size()).append(" Heart attacks have been detected!!!\n");
             for (HeartAttack heartAttack : heartAttacks) {
-                log.log(Level.SEVERE, format("\t%s", heartAttack));
+                sb.append("-----------------------------------------------------------------------------\n");
+                sb.append(heartAttack).append('\n');
             }
+            sb.append("-----------------------------------------------------------------------------\n");
+            log.log(Level.SEVERE, sb.toString());
             System.exit(1);
         }
     }
@@ -185,10 +189,10 @@ public class HeadCoach extends Coach {
 
             log.log(Level.INFO, "Exercise global tear down");
             submitToOneAndWait(new GenericExerciseTask("globalTearDown"));
-            return false;
+            return true;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed", e);
-            return true;
+            return false;
         }
     }
 
@@ -232,6 +236,8 @@ public class HeadCoach extends Coach {
         OptionSpec helpSpec = parser.accepts("help", "Show help").forHelp();
 
         OptionSet options;
+        HeadCoach coach = new HeadCoach();
+
         try {
             options = parser.parse(args);
             if (options.has(helpSpec)) {
@@ -249,7 +255,6 @@ public class HeadCoach extends Coach {
 
             Workout workout = createWorkout(new File(workoutFileName));
 
-            HeadCoach coach = new HeadCoach();
             coach.setWorkout(workout);
             coach.setDurationSec(options.valueOf(durationSpec));
             coach.setFailFast(options.valueOf(failFastSpec));
@@ -272,10 +277,16 @@ public class HeadCoach extends Coach {
             }
             coach.setCoachHzFile(coachHzFile);
 
-            coach.run();
-            System.exit(0);
         } catch (OptionException e) {
             Utils.exitWithError(e.getMessage() + ". Use --help to get overview of the help options.");
+        }
+
+        try {
+            coach.run();
+            System.exit(0);
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Failed to run workout", e);
+            System.exit(1);
         }
     }
 
