@@ -10,6 +10,16 @@
     <packaging>pom</packaging>
     <name>Hazelcast Heart Attack Tool - Parent</name>
 
+    <repositories>
+        <repository>
+            <id>snapshot-repository</id>
+            <name>Maven2 Snapshot Repository</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </repository>
+
+    </repositories>
+
+
     <properties>
         <jackson-version>2.2.0</jackson-version>
         <java.version>1.6</java.version>

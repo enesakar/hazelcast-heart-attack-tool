@@ -24,7 +24,6 @@
         <fileSet>
             <directory>${project.basedir}/../hazelcast-heartattack/conf</directory>
             <outputDirectory>/conf</outputDirectory>
-
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../hazelcast-heartattack/workouts</directory>
