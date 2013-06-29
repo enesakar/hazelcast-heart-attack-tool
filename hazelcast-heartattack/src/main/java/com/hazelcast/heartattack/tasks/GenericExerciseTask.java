@@ -2,7 +2,9 @@ package com.hazelcast.heartattack.tasks;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
+import com.hazelcast.heartattack.Coach;
 import com.hazelcast.heartattack.ExerciseInstance;
+import com.hazelcast.heartattack.HeartAttack;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -39,7 +41,6 @@ public class GenericExerciseTask implements Callable, Serializable, HazelcastIns
             log.log(Level.INFO, "Finished calling exerciseInstance." + methodName + "()");
             return null;
         } catch (Exception e) {
-            e.printStackTrace();
             log.log(Level.SEVERE, format("Failed to execute exercise.%s()", methodName), e);
             throw e;
         }

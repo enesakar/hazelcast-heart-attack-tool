@@ -13,7 +13,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.logging.Level;
 
 import static com.hazelcast.heartattack.Utils.closeQuietly;
@@ -52,6 +55,10 @@ public abstract class Coach {
         this.coachHzFile = coachHzFile;
     }
 
+    public HazelcastInstance getCoachHz(){
+        return coachHz;
+    }
+
     public File getCoachHzFile() {
         return coachHzFile;
     }
@@ -77,6 +84,10 @@ public abstract class Coach {
         return coachHz;
     }
 
+    public void heartAttack(HeartAttack heartAttack) {
+        heartAttackQueue.add(heartAttack);
+    }
+
     private class HeartAttackMonitor implements Runnable {
         public void run() {
             for (; ; ) {
@@ -97,7 +108,7 @@ public abstract class Coach {
 
                     if (heartAttack != null) {
                         traineeJvms.remove(jvm);
-                        heartAttackQueue.add(heartAttack);
+                        heartAttack(heartAttack);
                     }
                 }
 
@@ -207,11 +218,11 @@ public abstract class Coach {
         }
 
         String javaHome = System.getProperty("java.home");
-        log.log(Level.INFO,"java.home="+javaHome);
+        log.log(Level.INFO, "java.home=" + javaHome);
 
         List<String> args = new LinkedList<String>();
         args.add("java");
-        args.add(format("-XX:OnOutOfMemoryError=\"\"touch %s/trainees/%s.heartattack\"\"", heartAttackHome,traineeId));
+        args.add(format("-XX:OnOutOfMemoryError=\"\"touch %s/trainees/%s.heartattack\"\"", heartAttackHome, traineeId));
         args.add("-DHEART_ATTACK_HOME=" + getHeartAttackHome());
         args.add("-Dhazelcast.logging.type=log4j");
         args.add("-Dlog4j.configuration=file:" + heartAttackHome + File.separator + "conf" + File.separator + "trainee-log4j.xml");
@@ -223,7 +234,7 @@ public abstract class Coach {
         args.add(traineeHzFile.getAbsolutePath());
 
         ProcessBuilder processBuilder = new ProcessBuilder(args.toArray(new String[args.size()]))
-                .directory(new File(javaHome,"bin"))
+                .directory(new File(javaHome, "bin"))
                 .redirectErrorStream(true);
 
         Process process = processBuilder.start();

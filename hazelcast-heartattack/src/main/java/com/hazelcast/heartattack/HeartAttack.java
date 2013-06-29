@@ -1,6 +1,8 @@
 package com.hazelcast.heartattack;
 
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.util.Date;
 
@@ -11,6 +13,7 @@ public class HeartAttack implements Serializable {
     private final String traineeId;
     private final Date time;
     private final Exercise exercise;
+    private final Throwable cause;
 
     public HeartAttack(String message, InetSocketAddress coachAddress, InetSocketAddress traineeAddress, String traineeId, Exercise exercise) {
         this.message = message;
@@ -19,6 +22,21 @@ public class HeartAttack implements Serializable {
         this.time = new Date();
         this.exercise = exercise;
         this.traineeAddress = traineeAddress;
+        this.cause = null;
+    }
+
+    public HeartAttack(String message, InetSocketAddress coachAddress, InetSocketAddress traineeAddress, String traineeId, Exercise exercise, Throwable cause) {
+        this.message = message;
+        this.coachAddress = coachAddress;
+        this.traineeId = traineeId;
+        this.time = new Date();
+        this.exercise = exercise;
+        this.traineeAddress = traineeAddress;
+        this.cause = cause;
+    }
+
+    public Throwable getCause() {
+        return cause;
     }
 
     public String getMessage() {
@@ -56,6 +74,14 @@ public class HeartAttack implements Serializable {
         sb.append("   time=").append(time).append("\n");
         sb.append("   traineeAddress=").append(traineeAddress).append("\n");
         sb.append("   traineeId=").append(traineeId).append("\n");
+        if(cause!=null){
+            StringWriter sw = new StringWriter();
+            cause.printStackTrace(new PrintWriter(sw));
+            sb.append("   cause=").append(sw.toString()).append("\n");
+        }else{
+            sb.append("   cause=").append("null").append("\n");
+        }
+
         sb.append("   exercise=").append(exerciseString[0]).append("\n");
         for(int k=1;k<exerciseString.length;k++){
             sb.append("    ").append(exerciseString[k]).append("\n");

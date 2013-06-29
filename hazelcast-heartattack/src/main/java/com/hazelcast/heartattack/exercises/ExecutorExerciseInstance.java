@@ -17,7 +17,7 @@ import java.util.logging.Level;
 
 public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorExercise> {
 
-    final static ILogger log = Logger.getLogger(AtomicLongExerciseInstance.class.getName());
+    final static ILogger log = Logger.getLogger(ExecutorExerciseInstance.class.getName());
 
     private IExecutorService[] executors;
     private IAtomicLong executedCounter;
@@ -55,11 +55,12 @@ public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorE
 
     @Override
     public void globalVerify() throws Exception {
+        log.log(Level.INFO,"globalVerify called");
         long actualCount = executedCounter.get();
         long expectedCount = expectedExecutedCounter.get();
-        if (actualCount != expectedCount) {
+        //if (actualCount == expectedCount) {
             throw new RuntimeException("ActualCount:" + actualCount + " doesn't match ExpectedCount:" + expectedCount);
-        }
+        //}
     }
 
     private class Worker implements Runnable {
@@ -72,7 +73,7 @@ public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorE
                 int index = random.nextInt(executors.length);
                 IExecutorService executorService = executors[index];
 
-                Future future = executorService.submit(new Task());
+                 Future future = executorService.submit(new Task());
                 try {
                     future.get();
                 } catch (InterruptedException e) {

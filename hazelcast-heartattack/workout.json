@@ -1,5 +1,5 @@
 ["java.util.ArrayList",[
-        ["com.hazelcast.heartattack.exercises.AtomicLongExercise",{
+    ["com.hazelcast.heartattack.exercises.AtomicLongExercise",{
             "threadCount":10,
             "countersLength":1000
         }]

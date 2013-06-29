@@ -156,6 +156,7 @@ public class HeadCoach extends Coach {
     }
 
     private boolean run(Exercise exercise) {
+        int oldCount = heartAttacks.size();
         try {
             log.log(Level.INFO, exercise.getDescription());
 
@@ -189,7 +190,7 @@ public class HeadCoach extends Coach {
 
             log.log(Level.INFO, "Exercise global tear down");
             submitToOneAndWait(new GenericExerciseTask("globalTearDown"));
-            return true;
+            return heartAttacks.size() > oldCount;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed", e);
             return false;
@@ -197,7 +198,14 @@ public class HeadCoach extends Coach {
     }
 
     private void submitToOneAndWait(Callable task) throws InterruptedException, ExecutionException {
-        traineeExecutor.submit(task).get();
+        Future future = traineeExecutor.submit(task);
+        try{
+            Object o  =  future.get();
+            System.out.println(o);
+        } catch (ExecutionException e) {
+            heartAttack(new HeartAttack(null,null,null,null,exercise,e));
+            throw e;
+        }
     }
 
     private void submitToAllAndWait(IExecutorService executorService, Callable task) throws InterruptedException, ExecutionException {
@@ -205,9 +213,16 @@ public class HeadCoach extends Coach {
         getAllFutures(map.values());
     }
 
-    private void getAllFutures(Collection<Future> futures) throws InterruptedException, ExecutionException {
+    private void getAllFutures(Collection<Future> futures) throws InterruptedException,ExecutionException {
         for (Future future : futures) {
-            future.get();
+            try {
+
+               Object o  =  future.get();
+                System.out.println(o);
+            } catch (ExecutionException e) {
+                heartAttack(new HeartAttack(null,null,null,null,exercise,e));
+                throw e;
+            }
         }
     }
 
