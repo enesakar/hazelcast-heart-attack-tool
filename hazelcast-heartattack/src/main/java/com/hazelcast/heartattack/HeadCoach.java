@@ -99,8 +99,12 @@ public class HeadCoach extends Coach {
         long elapsedMs = System.currentTimeMillis() - startMs;
         log.log(Level.INFO, format("Total running time: %s seconds", elapsedMs / 1000));
 
+        coachHz.getLifecycleService().shutdown();
+
         if (heartAttacks.isEmpty()) {
+            log.log(Level.INFO, "-----------------------------------------------------------------------------");
             log.log(Level.INFO, "No heart attacks have been detected!");
+            log.log(Level.INFO, "-----------------------------------------------------------------------------");
             System.exit(0);
         } else {
             StringBuilder sb = new StringBuilder();
@@ -201,7 +205,6 @@ public class HeadCoach extends Coach {
         Future future = traineeExecutor.submit(task);
         try{
             Object o  =  future.get();
-            System.out.println(o);
         } catch (ExecutionException e) {
             heartAttack(new HeartAttack(null,null,null,null,exercise,e));
             throw e;
@@ -216,9 +219,7 @@ public class HeadCoach extends Coach {
     private void getAllFutures(Collection<Future> futures) throws InterruptedException,ExecutionException {
         for (Future future : futures) {
             try {
-
-               Object o  =  future.get();
-                System.out.println(o);
+          Object o  =  future.get();
             } catch (ExecutionException e) {
                 heartAttack(new HeartAttack(null,null,null,null,exercise,e));
                 throw e;
