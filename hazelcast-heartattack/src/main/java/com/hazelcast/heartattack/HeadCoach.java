@@ -178,7 +178,7 @@ public class HeadCoach extends Coach {
             submitToAllAndWait(traineeExecutor, new GenericExerciseTask("start"));
 
             log.log(Level.INFO, format("Exercise running for %s seconds", durationSec));
-            sleepSeconds(durationSec);
+            sleepSeconds(log, durationSec, "At %s seconds");
 
             log.log(Level.INFO, "Exercise stop");
             submitToAllAndWait(traineeExecutor, new GenericExerciseTask("stop"));
@@ -203,10 +203,10 @@ public class HeadCoach extends Coach {
 
     private void submitToOneAndWait(Callable task) throws InterruptedException, ExecutionException {
         Future future = traineeExecutor.submit(task);
-        try{
-            Object o  =  future.get();
+        try {
+            Object o = future.get();
         } catch (ExecutionException e) {
-            heartAttack(new HeartAttack(null,null,null,null,exercise,e));
+            heartAttack(new HeartAttack(null, null, null, null, exercise, e));
             throw e;
         }
     }
@@ -216,12 +216,12 @@ public class HeadCoach extends Coach {
         getAllFutures(map.values());
     }
 
-    private void getAllFutures(Collection<Future> futures) throws InterruptedException,ExecutionException {
+    private void getAllFutures(Collection<Future> futures) throws InterruptedException, ExecutionException {
         for (Future future : futures) {
             try {
-          Object o  =  future.get();
+                Object o = future.get();
             } catch (ExecutionException e) {
-                heartAttack(new HeartAttack(null,null,null,null,exercise,e));
+                heartAttack(new HeartAttack(null, null, null, null, exercise, e));
                 throw e;
             }
         }

@@ -1,7 +1,12 @@
 package com.hazelcast.heartattack;
 
+import com.hazelcast.logging.ILogger;
+
 import java.io.*;
 import java.util.Properties;
+import java.util.logging.Level;
+
+import static java.lang.String.format;
 
 public final class Utils {
 
@@ -80,7 +85,18 @@ public final class Utils {
         }
     }
 
+    public static void sleepSeconds(ILogger logger, int seconds, String txt) {
+        int period = 30;
+        int big = seconds / period;
+        int small = seconds % period;
 
+        for(int k=0;k<big;k++){
+            sleepSeconds(period);
+            logger.log(Level.INFO,format(txt,period*k));
+        }
+
+        sleepSeconds(small);
+    }
 
     public static void exitWithError(String msg) {
         System.out.printf(msg);
