@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.hazelcast.client.GenericError;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.Member;
@@ -204,6 +205,10 @@ public class HeadCoach extends Coach {
         Future future = traineeExecutor.submit(task);
         try {
             Object o = future.get();
+            if(o instanceof GenericError){
+                GenericError error = (GenericError)o;
+                throw new ExecutionException(error.getMessage()+": details:"+error.getDetails(),null);
+            }
         } catch (ExecutionException e) {
             heartAttack(new HeartAttack(null, null, null, null, exercise, e));
             throw e;
@@ -219,6 +224,10 @@ public class HeadCoach extends Coach {
         for (Future future : futures) {
             try {
                 Object o = future.get();
+                if(o instanceof GenericError){
+                    GenericError error = (GenericError)o;
+                    throw new ExecutionException(error.getMessage()+": details:"+error.getDetails(),null);
+                }
             } catch (ExecutionException e) {
                 heartAttack(new HeartAttack(null, null, null, null, exercise, e));
                 throw e;
