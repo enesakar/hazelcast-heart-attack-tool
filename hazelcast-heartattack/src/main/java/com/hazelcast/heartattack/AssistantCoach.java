@@ -19,6 +19,7 @@ public class AssistantCoach extends Coach {
 
     private void run() throws Exception {
         initCoachHazelcastInstance();
+        System.out.println("Hazelcast Assistant Coach is Ready for action");
     }
 
     public static void main(String[] args) throws Exception {
