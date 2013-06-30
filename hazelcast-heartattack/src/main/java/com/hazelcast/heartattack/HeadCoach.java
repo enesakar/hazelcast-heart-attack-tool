@@ -152,10 +152,12 @@ public class HeadCoach extends Coach {
 
     private long startTrainees() throws Exception {
         long startMs = System.currentTimeMillis();
-        log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines", traineeSettings.getTraineeCount()));
+        final int traineeCount = traineeSettings.getTraineeCount();
+        final int totalTraineeCount = traineeCount * coachHz.getCluster().getMembers().size();
+        log.log(Level.INFO, format("Starting a grand total of %s Trainee Java Virtual Machines", totalTraineeCount));
         submitToAllAndWait(coachExecutor, new SpawnTrainees(traineeSettings));
         long durationMs = System.currentTimeMillis() - startMs;
-        log.log(Level.INFO, (format("Trainee Java Virtual Machines have started after %s ms\n", durationMs)));
+        log.log(Level.INFO, (format("Finished starting a grand total of %s Trainees after %s ms\n", totalTraineeCount,durationMs)));
         return startMs;
     }
 
