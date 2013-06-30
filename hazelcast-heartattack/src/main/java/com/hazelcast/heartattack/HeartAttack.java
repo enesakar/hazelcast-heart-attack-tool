@@ -7,6 +7,9 @@ import java.net.InetSocketAddress;
 import java.util.Date;
 
 public class HeartAttack implements Serializable {
+
+    private static final long serialVersionUID = 1;
+
     private final String message;
     private final InetSocketAddress coachAddress;
     private final InetSocketAddress traineeAddress;

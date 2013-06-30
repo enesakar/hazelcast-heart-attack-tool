@@ -6,6 +6,8 @@ import java.util.List;
 
 public class Workout implements Serializable{
 
+    private static final long serialVersionUID = 1;
+
     private List<Exercise> exerciseList = new LinkedList<Exercise>();
 
     public void addExercise(Exercise exercise) {

@@ -68,12 +68,11 @@ public class HeadCoach extends Coach {
     }
 
     private void run() throws Exception {
-        log.log(Level.INFO, format("Trainee track logging: %s", traineeSettings.isTrackLogging()));
-        log.log(Level.INFO, format("Trainee's per coach: %s", traineeSettings.getTraineeCount()));
-
         initCoachHazelcastInstance();
 
         Set<Member> members = coachHz.getCluster().getMembers();
+        log.log(Level.INFO, format("Trainee track logging: %s", traineeSettings.isTrackLogging()));
+        log.log(Level.INFO, format("Trainee's per coach: %s", traineeSettings.getTraineeCount()));
         log.log(Level.INFO, format("Total number of coaches: %s", members.size()));
         log.log(Level.INFO, format("Total number of trainees: %s", members.size() * traineeSettings.getTraineeCount()));
 

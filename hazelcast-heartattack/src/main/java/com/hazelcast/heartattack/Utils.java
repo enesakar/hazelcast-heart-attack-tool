@@ -90,7 +90,7 @@ public final class Utils {
         int big = seconds / period;
         int small = seconds % period;
 
-        for(int k=0;k<big;k++){
+        for(int k=1;k<=big;k++){
             sleepSeconds(period);
             logger.log(Level.INFO,format(txt,period*k));
         }
