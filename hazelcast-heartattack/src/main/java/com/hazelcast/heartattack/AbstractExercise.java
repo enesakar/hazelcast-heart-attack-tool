@@ -9,6 +9,8 @@ import java.lang.reflect.Field;
 import java.util.UUID;
 
 public abstract class AbstractExercise implements Exercise {
+    private static final long serialVersionUID = 1;
+
     @JsonIgnore
     private final String clazzName;
     @JsonIgnore
