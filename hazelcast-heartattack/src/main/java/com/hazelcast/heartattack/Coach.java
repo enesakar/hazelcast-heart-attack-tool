@@ -180,6 +180,8 @@ public abstract class Coach {
     }
 
     public void spawnTrainees(TraineeSettings settings) throws Exception {
+        log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines", settings.getTraineeCount()));
+
         File traineeHzFile = File.createTempFile("trainee-hazelcast", "xml");
         traineeHzFile.deleteOnExit();
         Utils.write(traineeHzFile, settings.getHzConfig());
@@ -207,6 +209,8 @@ public abstract class Coach {
         for (TraineeJvm trainee : trainees) {
             waitForTraineeStartup(trainee);
         }
+
+        log.log(Level.INFO, format("Finished starting %s trainee Java Virtual Machines", settings.getTraineeCount()));
     }
 
     private TraineeJvm startTraineeJvm(String traineeVmOptions, File traineeHzFile) throws IOException {
@@ -282,7 +286,7 @@ public abstract class Coach {
             }
 
             if (exitCode != 0) {
-                log.log(Level.INFO, format("trainee process exited with exit code: %s", exitCode));
+                log.log(Level.INFO, format("trainee process %s exited with exit code: %s", jvm.getId(),exitCode));
             }
         }
         traineeJvms.clear();
