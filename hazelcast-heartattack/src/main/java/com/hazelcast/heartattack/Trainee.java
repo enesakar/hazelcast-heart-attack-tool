@@ -63,6 +63,6 @@ public class Trainee {
         trainee.setTraineeHzFile(traineeHzFile);
         trainee.start();
 
-        System.out.println( "Successfully started Hazelcast Heart Attack Trainee");
+        System.out.println( "Successfully started Hazelcast Heart Attack Trainee:"+traineeId);
     }
 }

@@ -68,7 +68,6 @@ public class HeartAttack implements Serializable {
 
     @Override
     public String toString() {
-        String[] exerciseString = exercise.toString().split("\n");
 
         StringBuffer sb = new StringBuffer();
         sb.append("HeartAttack[\n");
@@ -77,17 +76,22 @@ public class HeartAttack implements Serializable {
         sb.append("   time=").append(time).append("\n");
         sb.append("   traineeAddress=").append(traineeAddress).append("\n");
         sb.append("   traineeId=").append(traineeId).append("\n");
-        if(cause!=null){
+        if (cause != null) {
             StringWriter sw = new StringWriter();
             cause.printStackTrace(new PrintWriter(sw));
             sb.append("   cause=").append(sw.toString()).append("\n");
-        }else{
+        } else {
             sb.append("   cause=").append("null").append("\n");
         }
 
-        sb.append("   exercise=").append(exerciseString[0]).append("\n");
-        for(int k=1;k<exerciseString.length;k++){
-            sb.append("    ").append(exerciseString[k]).append("\n");
+        if (exercise != null) {
+            String[] exerciseString = exercise.toString().split("\n");
+            sb.append("   exercise=").append(exerciseString[0]).append("\n");
+            for (int k = 1; k < exerciseString.length; k++) {
+                sb.append("    ").append(exerciseString[k]).append("\n");
+            }
+        }else{
+            sb.append("   exercise=").append("null").append("\n");
         }
         sb.append("]");
         return sb.toString();
