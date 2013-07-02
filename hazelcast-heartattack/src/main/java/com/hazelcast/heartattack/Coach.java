@@ -43,6 +43,18 @@ public abstract class Coach {
     protected volatile IQueue<HeartAttack> heartAttackQueue;
     protected volatile Exercise exercise;
     private final List<TraineeJvm> traineeJvms = new CopyOnWriteArrayList<TraineeJvm>();
+    private final AtomicBoolean javaHomePrinted = new AtomicBoolean();
+
+    public Coach(){
+        Runtime.getRuntime().addShutdownHook(new Thread(){
+            public void run(){
+               for(TraineeJvm jvm: traineeJvms){
+                    log.log(Level.INFO, "Destroying trainee : "+jvm.getId());
+                    jvm.getProcess().destroy();
+                }
+            }
+        });
+    }
 
     public Exercise getExercise() {
         return exercise;
@@ -214,8 +226,6 @@ public abstract class Coach {
         log.log(Level.INFO, format("Finished starting %s trainee Java Virtual Machines", settings.getTraineeCount()));
     }
 
-    private final AtomicBoolean javaHomePrinted = new AtomicBoolean();
-
     private String getJavaHome() {
         String javaHome = System.getProperty("java.home");
         if (javaHomePrinted.compareAndSet(false, true)) {
@@ -279,7 +289,6 @@ public abstract class Coach {
         }
         log.log(Level.INFO, "Trainee: " + jvm.getId() + " Started");
     }
-
 
     public void destroyTrainees() {
         if (traineeClient != null) {

@@ -27,6 +27,10 @@ no need to stop it.
 
 - when a coach is terminated (e.g. jvm crashes) the trainee vm's should terminate as well. Currently they keep running.
 
+- better control on selecting the java virtual machine for the client
+
+- currently the client is running in the directory of the jvm; which of course is no good.
+
 DONE
 
 - when a heart attack happens, all coaches should see it.
