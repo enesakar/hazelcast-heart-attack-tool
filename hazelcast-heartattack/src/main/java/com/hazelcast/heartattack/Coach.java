@@ -14,9 +14,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Level;
 
 import static com.hazelcast.heartattack.Utils.closeQuietly;
@@ -41,7 +41,7 @@ public abstract class Coach {
     protected volatile IExecutorService traineeExecutor;
     protected volatile IQueue<HeartAttack> heartAttackQueue;
     protected volatile Exercise exercise;
-    private final List<TraineeJvm> traineeJvms = Collections.synchronizedList(new LinkedList<TraineeJvm>());
+    private final List<TraineeJvm> traineeJvms = new CopyOnWriteArrayList<TraineeJvm>();
 
     public Exercise getExercise() {
         return exercise;
@@ -55,7 +55,7 @@ public abstract class Coach {
         this.coachHzFile = coachHzFile;
     }
 
-    public HazelcastInstance getCoachHz(){
+    public HazelcastInstance getCoachHz() {
         return coachHz;
     }
 
@@ -263,7 +263,8 @@ public abstract class Coach {
         }
 
         if (!found) {
-            throw new RuntimeException(format("Trainee %s didn't start up in time", jvm.getId()));
+            throw new RuntimeException(format("Trainee %s on host %s didn't start up in time",
+                    jvm.getId(), coachHz.getCluster().getLocalMember().getInetSocketAddress()));
         }
         log.log(Level.INFO, "Trainee: " + jvm.getId() + " Started");
     }
@@ -286,7 +287,7 @@ public abstract class Coach {
             }
 
             if (exitCode != 0) {
-                log.log(Level.INFO, format("trainee process %s exited with exit code: %s", jvm.getId(),exitCode));
+                log.log(Level.INFO, format("trainee process %s exited with exit code: %s", jvm.getId(), exitCode));
             }
         }
         traineeJvms.clear();
