@@ -161,40 +161,61 @@ public class HeadCoach extends Coach {
         return startMs;
     }
 
+    private void echoToCoaches(String s){
+        try{
+            submitToAllAndWait(coachExecutor,new EchoTask(s));
+        }catch(Exception e){
+            log.log(Level.SEVERE, "Failed to echo to all members",e);
+        }
+    }
+
+    public void sleepSeconds(int seconds, String txt) {
+        int period = 30;
+        int big = seconds / period;
+        int small = seconds % period;
+
+        for(int k=1;k<=big;k++){
+            Utils.sleepSeconds(period);
+            echoToCoaches(format(txt,period*k));
+        }
+
+        Utils.sleepSeconds(small);
+    }
+
     private boolean run(Exercise exercise) {
         int oldCount = heartAttacks.size();
         try {
-            log.log(Level.INFO, exercise.getDescription());
+            echoToCoaches(exercise.getDescription());
 
-            log.log(Level.INFO, "Exercise initializing");
+            echoToCoaches("Exercise initializing");
             submitToAllAndWait(coachExecutor, new PrepareCoachForExercise(exercise));
             submitToAllAndWait(traineeExecutor, new InitExercise(exercise));
 
-            log.log(Level.INFO, "Exercise global setup");
+            echoToCoaches("Exercise global setup");
             submitToOneAndWait(new GenericExerciseTask("globalSetup"));
 
-            log.log(Level.INFO, "Exercise local setup");
+            echoToCoaches("Exercise local setup");
             submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localSetup"));
 
-            log.log(Level.INFO, "Exercise task");
+            echoToCoaches("Exercise task");
             submitToAllAndWait(traineeExecutor, new GenericExerciseTask("start"));
 
-            log.log(Level.INFO, format("Exercise running for %s seconds", durationSec));
-            sleepSeconds(log, durationSec, "At %s seconds");
+            echoToCoaches(format("Exercise running for %s seconds", durationSec));
+            sleepSeconds(durationSec, "At %s seconds");
 
-            log.log(Level.INFO, "Exercise stop");
+            echoToCoaches("Exercise stop");
             submitToAllAndWait(traineeExecutor, new GenericExerciseTask("stop"));
 
-            log.log(Level.INFO, "Exercise global verify");
+            echoToCoaches("Exercise global verify");
             submitToOneAndWait(new GenericExerciseTask("globalVerify"));
 
-            log.log(Level.INFO, "Exercise local verify");
+            echoToCoaches("Exercise local verify");
             submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localVerify"));
 
-            log.log(Level.INFO, "Exercise local tear down");
+            echoToCoaches("Exercise local tear down");
             submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localTearDown"));
 
-            log.log(Level.INFO, "Exercise global tear down");
+            echoToCoaches("Exercise global tear down");
             submitToOneAndWait(new GenericExerciseTask("globalTearDown"));
             return heartAttacks.size() > oldCount;
         } catch (Exception e) {

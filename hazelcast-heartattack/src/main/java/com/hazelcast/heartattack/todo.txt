@@ -25,6 +25,8 @@ TODO
 - when extra jars are going to be provided, they should be uploaded to the coach vm. A coach should just keep running,
 no need to stop it.
 
+- when a coach is terminated (e.g. jvm crashes) the trainee vm's should terminate as well. Currently they keep running.
+
 DONE
 
 - when a heart attack happens, all coaches should see it.
