@@ -47,7 +47,7 @@ public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorE
         for (IExecutorService executor : executors) {
             executor.shutdownNow();
             if (!executor.awaitTermination(120, TimeUnit.SECONDS)) {
-                log.log(Level.SEVERE,"Time out while waiting for  shutdown of executor: "+executor.getId());
+                log.log(Level.SEVERE, "Time out while waiting for  shutdown of executor: " + executor.getId());
             }
             executor.destroy();
         }
@@ -55,7 +55,7 @@ public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorE
 
     @Override
     public void globalVerify() throws Exception {
-        log.log(Level.INFO,"globalVerify called");
+        log.log(Level.INFO, "globalVerify called");
         long actualCount = executedCounter.get();
         long expectedCount = expectedExecutedCounter.get();
         if (actualCount != expectedCount) {
@@ -73,7 +73,7 @@ public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorE
                 int index = random.nextInt(executors.length);
                 IExecutorService executorService = executors[index];
 
-                 Future future = executorService.submit(new Task());
+                Future future = executorService.submit(new Task());
                 try {
                     future.get();
                 } catch (InterruptedException e) {
