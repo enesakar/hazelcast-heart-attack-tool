@@ -33,6 +33,8 @@ no need to stop it.
 
 DONE
 
+- when a coach terminates, it should terminate the clients.
+
 - when a heart attack happens, all coaches should see it.
 
 - better location to store the heartattack files

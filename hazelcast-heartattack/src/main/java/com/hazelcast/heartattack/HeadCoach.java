@@ -127,7 +127,7 @@ public class HeadCoach extends Coach {
 
         //we need to make sure that before we start, there are no trainees running anymore.
         //log.log(Level.INFO, "Ensuring trainee all killed");
-        //stopTrainees();
+        stopTrainees();
         startTrainees();
 
         for (Exercise exercise : workout.getExerciseList()) {
@@ -147,7 +147,9 @@ public class HeadCoach extends Coach {
     }
 
     private void stopTrainees() throws Exception {
+        echoToCoaches("Stopping all remaining trainees");
         submitToAllAndWait(coachExecutor, new DestroyTrainees());
+        echoToCoaches("All remaining trainees have been terminated");
     }
 
     private long startTrainees() throws Exception {

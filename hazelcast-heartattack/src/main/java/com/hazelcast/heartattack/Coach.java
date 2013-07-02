@@ -291,6 +291,7 @@ public abstract class Coach {
     }
 
     public void destroyTrainees() {
+
         if (traineeClient != null) {
             traineeClient.getLifecycleService().shutdown();
         }

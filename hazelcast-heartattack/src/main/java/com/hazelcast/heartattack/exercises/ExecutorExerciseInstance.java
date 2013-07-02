@@ -46,8 +46,8 @@ public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorE
         expectedExecutedCounter.destroy();
         for (IExecutorService executor : executors) {
             executor.shutdownNow();
-            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
-                throw new RuntimeException("Time out while waiting for executor shutdown");
+            if (!executor.awaitTermination(120, TimeUnit.SECONDS)) {
+                log.log(Level.SEVERE,"Time out while waiting for  shutdown of executor: "+executor.getId());
             }
             executor.destroy();
         }
@@ -58,9 +58,9 @@ public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorE
         log.log(Level.INFO,"globalVerify called");
         long actualCount = executedCounter.get();
         long expectedCount = expectedExecutedCounter.get();
-        //if (actualCount == expectedCount) {
+        if (actualCount != expectedCount) {
             throw new RuntimeException("ActualCount:" + actualCount + " doesn't match ExpectedCount:" + expectedCount);
-        //}
+        }
     }
 
     private class Worker implements Runnable {
@@ -77,9 +77,9 @@ public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorE
                 try {
                     future.get();
                 } catch (InterruptedException e) {
-                    throw new RuntimeException();
+                    throw new RuntimeException(e);
                 } catch (ExecutionException e) {
-                    throw new RuntimeException();
+                    throw new RuntimeException(e);
                 }
 
                 if (iteration % 10000 == 0) {
