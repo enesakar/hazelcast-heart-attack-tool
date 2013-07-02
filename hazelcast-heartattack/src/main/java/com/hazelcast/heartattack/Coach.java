@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 import static com.hazelcast.heartattack.Utils.closeQuietly;
@@ -213,6 +214,17 @@ public abstract class Coach {
         log.log(Level.INFO, format("Finished starting %s trainee Java Virtual Machines", settings.getTraineeCount()));
     }
 
+    private final AtomicBoolean javaHomePrinted = new AtomicBoolean();
+
+    private String getJavaHome() {
+        String javaHome = System.getProperty("java.home");
+        if (javaHomePrinted.compareAndSet(false, true)) {
+            log.log(Level.INFO, "java.home=" + javaHome);
+        }
+
+        return javaHome;
+    }
+
     private TraineeJvm startTraineeJvm(String traineeVmOptions, File traineeHzFile) throws IOException {
         String traineeId = "" + System.currentTimeMillis();
 
@@ -221,8 +233,7 @@ public abstract class Coach {
             clientVmOptionsArray = traineeVmOptions.split("\\s+");
         }
 
-        String javaHome = System.getProperty("java.home");
-        log.log(Level.INFO, "java.home=" + javaHome);
+        String javaHome = getJavaHome();
 
         List<String> args = new LinkedList<String>();
         args.add("java");
