@@ -290,16 +290,18 @@ public abstract class Coach {
     }
 
     public void destroyTrainees() {
-
-        if (traineeClient != null) {
+       if (traineeClient != null) {
             traineeClient.getLifecycleService().shutdown();
         }
 
-        for (TraineeJvm jvm : traineeJvms) {
+        List<TraineeJvm> trainees = new LinkedList<TraineeJvm>();
+        trainees.removeAll(traineeJvms);
+
+        for (TraineeJvm jvm : trainees) {
             jvm.getProcess().destroy();
         }
 
-        for (TraineeJvm jvm : traineeJvms) {
+        for (TraineeJvm jvm : trainees) {
             int exitCode = 0;
             try {
                 exitCode = jvm.getProcess().waitFor();
@@ -310,6 +312,5 @@ public abstract class Coach {
                 log.log(Level.INFO, format("trainee process %s exited with exit code: %s", jvm.getId(), exitCode));
             }
         }
-        traineeJvms.clear();
     }
 }
