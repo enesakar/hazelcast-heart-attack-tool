@@ -81,6 +81,7 @@ public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorE
                 for (int k = 0; k < getExercise().submitCount; k++) {
                     Future future = executorService.submit(new Task());
                     futureList.add(future);
+                    iteration++;
                 }
 
                 for (Future future : futureList) {
@@ -96,7 +97,7 @@ public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorE
                 if (iteration % 10000 == 0) {
                     log.log(Level.INFO, Thread.currentThread().getName() + " At iteration: " + iteration);
                 }
-                iteration++;
+
             }
 
             expectedExecutedCounter.addAndGet(iteration);

@@ -31,6 +31,17 @@ no need to stop it.
 
 - currently the client is running in the directory of the jvm; which of course is no good.
 
+- currently only second based time entry is possible; which is annoying if yuo want to run for a large times. So do something
+with 10m or 2h.
+
+- automatically clear the trainee directory option
+
+- an option to send back some kind of progress report that periodically can be asked by the head coach about the status
+of a running job.
+
+- when an exception is thrown by one of the ExerciseInstance method, it isn't correctly translated to a heartattack (lots
+of information missing).
+
 DONE
 
 - when a coach terminates, it should terminate the clients.
