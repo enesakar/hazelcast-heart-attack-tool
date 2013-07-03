@@ -9,6 +9,8 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.io.Serializable;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -69,17 +71,26 @@ public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorE
         @Override
         public void run() {
             long iteration = 0;
+
+            List<Future> futureList = new LinkedList<Future>();
             while (!stop) {
                 int index = random.nextInt(executors.length);
                 IExecutorService executorService = executors[index];
+                futureList.clear();
 
-                Future future = executorService.submit(new Task());
-                try {
-                    future.get();
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                } catch (ExecutionException e) {
-                    throw new RuntimeException(e);
+                for (int k = 0; k < getExercise().submitCount; k++) {
+                    Future future = executorService.submit(new Task());
+                    futureList.add(future);
+                }
+
+                for (Future future : futureList) {
+                    try {
+                        future.get();
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    } catch (ExecutionException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
 
                 if (iteration % 10000 == 0) {
