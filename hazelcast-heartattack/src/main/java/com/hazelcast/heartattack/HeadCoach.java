@@ -192,31 +192,31 @@ public class HeadCoach extends Coach {
 
             echoToCoaches("Exercise initializing");
             submitToAllAndWait(coachExecutor, new PrepareCoachForExercise(exercise));
-            submitToAllAndWait(traineeExecutor, new InitExercise(exercise));
+            shoutAndWait(new InitExercise(exercise));
 
             echoToCoaches("Exercise global setup");
             submitToOneAndWait(new GenericExerciseTask("globalSetup"));
 
             echoToCoaches("Exercise local setup");
-            submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localSetup"));
+            shoutAndWait(new GenericExerciseTask("localSetup"));
 
             echoToCoaches("Exercise task");
-            submitToAllAndWait(traineeExecutor, new GenericExerciseTask("start"));
+            shoutAndWait(new GenericExerciseTask("start"));
 
             echoToCoaches(format("Exercise running for %s seconds", durationSec));
             sleepSeconds(durationSec, "At %s seconds");
 
             echoToCoaches("Exercise stop");
-            submitToAllAndWait(traineeExecutor, new GenericExerciseTask("stop"));
+            shoutAndWait(new GenericExerciseTask("stop"));
 
             echoToCoaches("Exercise global verify");
             submitToOneAndWait(new GenericExerciseTask("globalVerify"));
 
             echoToCoaches("Exercise local verify");
-            submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localVerify"));
+            shoutAndWait(new GenericExerciseTask("localVerify"));
 
             echoToCoaches("Exercise local tear down");
-            submitToAllAndWait(traineeExecutor, new GenericExerciseTask("localTearDown"));
+            shoutAndWait(new GenericExerciseTask("localTearDown"));
 
             echoToCoaches("Exercise global tear down");
             submitToOneAndWait(new GenericExerciseTask("globalTearDown"));
@@ -239,6 +239,10 @@ public class HeadCoach extends Coach {
             heartAttack(new HeartAttack(null, null, null, null, exercise, e));
             throw e;
         }
+    }
+
+    private void shoutAndWait(Callable task)  throws InterruptedException, ExecutionException{
+        submitToAllAndWait(coachExecutor, new ShoutTask(task));
     }
 
     private void submitToAllAndWait(IExecutorService executorService, Callable task) throws InterruptedException, ExecutionException {

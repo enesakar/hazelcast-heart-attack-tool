@@ -1,5 +1,6 @@
 package com.hazelcast.heartattack;
 
+import com.hazelcast.client.GenericError;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
@@ -13,10 +14,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
@@ -45,15 +47,27 @@ public abstract class Coach {
     private final List<TraineeJvm> traineeJvms = new CopyOnWriteArrayList<TraineeJvm>();
     private final AtomicBoolean javaHomePrinted = new AtomicBoolean();
 
-    public Coach(){
-        Runtime.getRuntime().addShutdownHook(new Thread(){
-            public void run(){
-               for(TraineeJvm jvm: traineeJvms){
-                    log.log(Level.INFO, "Destroying trainee : "+jvm.getId());
+    public Coach() {
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                for (TraineeJvm jvm : traineeJvms) {
+                    log.log(Level.INFO, "Destroying trainee : " + jvm.getId());
                     jvm.getProcess().destroy();
                 }
             }
         });
+    }
+
+    public HazelcastInstance getTraineeClient() {
+        return traineeClient;
+    }
+
+    public IExecutorService getTraineeExecutor() {
+        return traineeExecutor;
+    }
+
+    public List<TraineeJvm> getTrainees() {
+        return traineeJvms;
     }
 
     public Exercise getExercise() {
@@ -101,6 +115,40 @@ public abstract class Coach {
         heartAttackQueue.add(heartAttack);
     }
 
+    public void shoutToTrainees(Callable task) throws InterruptedException {
+        Map<TraineeJvm, Future> futures = new HashMap<TraineeJvm, Future>();
+
+        for (TraineeJvm traineeJvm : traineeJvms) {
+            Member member = traineeJvm.getMember();
+            if (member == null) continue;
+
+            Future future = traineeExecutor.submitToMember(task, member);
+            futures.put(traineeJvm, future);
+        }
+
+        for (Map.Entry<TraineeJvm, Future> entry : futures.entrySet()) {
+            TraineeJvm traineeJvm = entry.getKey();
+            Future future = entry.getValue();
+            try {
+                Object o = future.get();
+                if (o instanceof GenericError) {
+                    GenericError error = (GenericError) o;
+                    throw new ExecutionException(error.getMessage() + ": details:" + error.getDetails(), null);
+                }
+            } catch (ExecutionException e) {
+                final HeartAttack heartAttack = new HeartAttack(
+                        null,
+                        coachHz.getCluster().getLocalMember().getInetSocketAddress(),
+                        traineeJvm.getMember().getInetSocketAddress(),
+                        traineeJvm.getId(),
+                        exercise,
+                        e);
+                heartAttack(heartAttack);
+            }
+        }
+    }
+
+
     private class HeartAttackMonitor implements Runnable {
         public void run() {
             for (; ; ) {
@@ -131,7 +179,7 @@ public abstract class Coach {
 
         private HeartAttack detectMembershipFailure(TraineeJvm jvm) {
             //if the jvm is not assigned a hazelcast address yet.
-            if (jvm.getAddress() == null) {
+            if (jvm.getMember() == null) {
                 return null;
             }
 
@@ -140,7 +188,7 @@ public abstract class Coach {
                 jvm.getProcess().destroy();
                 return new HeartAttack("Hazelcast membership failure (member missing)",
                         coachHz.getCluster().getLocalMember().getInetSocketAddress(),
-                        jvm.getAddress(),
+                        jvm.getMember().getInetSocketAddress(),
                         jvm.getId(),
                         exercise);
             }
@@ -152,7 +200,7 @@ public abstract class Coach {
             if (traineeClient == null) return null;
 
             for (Member member : traineeClient.getCluster().getMembers()) {
-                if (member.getInetSocketAddress().equals(jvm.getAddress())) {
+                if (member.getInetSocketAddress().equals(jvm.getMember().getInetSocketAddress())) {
                     return member;
                 }
             }
@@ -168,7 +216,7 @@ public abstract class Coach {
             HeartAttack heartAttack = new HeartAttack(
                     "out of memory",
                     coachHz.getCluster().getLocalMember().getInetSocketAddress(),
-                    jvm.getAddress(),
+                    jvm.getMember().getInetSocketAddress(),
                     jvm.getId(),
                     exercise);
             jvm.getProcess().destroy();
@@ -182,7 +230,7 @@ public abstract class Coach {
                     return new HeartAttack(
                             "exit code not 0",
                             coachHz.getCluster().getLocalMember().getInetSocketAddress(),
-                            jvm.getAddress(),
+                            jvm.getMember().getInetSocketAddress(),
                             jvm.getId(),
                             exercise);
                 }
@@ -193,7 +241,7 @@ public abstract class Coach {
     }
 
     public void spawnTrainees(TraineeSettings settings) throws Exception {
-        log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines using settings %s", settings.getTraineeCount(),settings));
+        log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines using settings %s", settings.getTraineeCount(), settings));
 
         File traineeHzFile = File.createTempFile("trainee-hazelcast", "xml");
         traineeHzFile.deleteOnExit();
@@ -212,14 +260,14 @@ public abstract class Coach {
         }
         Config config = new XmlConfigBuilder(traineeHzFile.getAbsolutePath()).build();
         ClientConfig clientConfig = new ClientConfig().addAddress("localhost:" + config.getNetworkConfig().getPort());
-         clientConfig.getGroupConfig()
+        clientConfig.getGroupConfig()
                 .setName(config.getGroupConfig().getName())
                 .setPassword(config.getGroupConfig().getPassword());
         traineeClient = HazelcastClient.newHazelcastClient(clientConfig);
         traineeExecutor = traineeClient.getExecutorService(Trainee.TRAINEE_EXECUTOR);
 
         for (TraineeJvm trainee : trainees) {
-            waitForTraineeStartup(trainee,settings.getTraineeStartupTimeout());
+            waitForTraineeStartup(trainee, settings.getTraineeStartupTimeout());
         }
 
         log.log(Level.INFO, format("Finished starting %s trainee Java Virtual Machines", settings.getTraineeCount()));
@@ -249,7 +297,7 @@ public abstract class Coach {
         args.add(format("-XX:OnOutOfMemoryError=\"\"touch %s/trainees/%s.heartattack\"\"", heartAttackHome, traineeId));
         args.add("-DHEART_ATTACK_HOME=" + getHeartAttackHome());
         args.add("-Dhazelcast.logging.type=log4j");
-        args.add("-DtraineeId="+traineeId);
+        args.add("-DtraineeId=" + traineeId);
         args.add("-Dlog4j.configuration=file:" + heartAttackHome + File.separator + "conf" + File.separator + "trainee-log4j.xml");
         args.add("-cp");
         args.add(classpath);
@@ -275,7 +323,21 @@ public abstract class Coach {
         for (int l = 0; l < traineeTimeoutSec; l++) {
             if (traineeParticipantMap.containsKey(jvm.getId())) {
                 InetSocketAddress address = traineeParticipantMap.remove(jvm.getId());
-                jvm.setAddress(address);
+
+                Member member = null;
+                for (Member m : traineeClient.getCluster().getMembers()) {
+                    if (m.getInetSocketAddress().equals(address)) {
+                        member = m;
+                        break;
+                    }
+
+                }
+
+                if(member == null){
+                    throw new RuntimeException("No member found for address: "+address);
+                }
+
+                jvm.setMember(member);
                 found = true;
                 break;
             } else {
@@ -285,13 +347,13 @@ public abstract class Coach {
 
         if (!found) {
             throw new RuntimeException(format("Timeout: trainee %s on host %s didn't start within %s seconds",
-                    jvm.getId(), coachHz.getCluster().getLocalMember().getInetSocketAddress(),traineeTimeoutSec));
+                    jvm.getId(), coachHz.getCluster().getLocalMember().getInetSocketAddress(), traineeTimeoutSec));
         }
         log.log(Level.INFO, "Trainee: " + jvm.getId() + " Started");
     }
 
     public void destroyTrainees() {
-       if (traineeClient != null) {
+        if (traineeClient != null) {
             traineeClient.getLifecycleService().shutdown();
         }
 

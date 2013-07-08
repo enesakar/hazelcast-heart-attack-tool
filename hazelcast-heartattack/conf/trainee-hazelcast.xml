@@ -13,7 +13,7 @@
     </properties>
 
     <network>
-        <port auto-increment="true">6701</port>
+        <port port-count="200" auto-increment="true">6701</port>
         <join>
             <multicast enabled="true"/>
         </join>

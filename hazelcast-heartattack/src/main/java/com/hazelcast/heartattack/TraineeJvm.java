@@ -1,23 +1,26 @@
 package com.hazelcast.heartattack;
 
+import com.hazelcast.core.Member;
+
 import java.net.InetSocketAddress;
 
 public class TraineeJvm {
     private final Process process;
     private final String id;
-    private volatile  InetSocketAddress address;
+    private volatile Member member;
 
     public TraineeJvm(String id, Process process) {
         this.id = id;
         this.process = process;
     }
 
-    void setAddress(InetSocketAddress address) {
-        this.address = address;
+
+    public Member getMember() {
+        return member;
     }
 
-    public InetSocketAddress getAddress() {
-        return address;
+    public void setMember(Member member) {
+        this.member = member;
     }
 
     public String getId() {
