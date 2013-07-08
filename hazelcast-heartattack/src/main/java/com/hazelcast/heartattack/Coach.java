@@ -283,7 +283,7 @@ public abstract class Coach {
         }
 
         if (!found) {
-            throw new RuntimeException(format("Trainee %s on host %s didn't start within %s seconds",
+            throw new RuntimeException(format("Timeout: trainee %s on host %s didn't start within %s seconds",
                     jvm.getId(), coachHz.getCluster().getLocalMember().getInetSocketAddress(),traineeTimeoutSec));
         }
         log.log(Level.INFO, "Trainee: " + jvm.getId() + " Started");
