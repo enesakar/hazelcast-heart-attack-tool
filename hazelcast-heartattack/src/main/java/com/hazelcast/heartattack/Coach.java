@@ -219,7 +219,7 @@ public abstract class Coach {
         traineeExecutor = traineeClient.getExecutorService(Trainee.TRAINEE_EXECUTOR);
 
         for (TraineeJvm trainee : trainees) {
-            waitForTraineeStartup(trainee);
+            waitForTraineeStartup(trainee,settings.getTraineeStartupTimeout());
         }
 
         log.log(Level.INFO, format("Finished starting %s trainee Java Virtual Machines", settings.getTraineeCount()));
@@ -267,11 +267,11 @@ public abstract class Coach {
         return traineeJvm;
     }
 
-    private void waitForTraineeStartup(TraineeJvm jvm) throws InterruptedException {
+    private void waitForTraineeStartup(TraineeJvm jvm, int traineeTimeoutSec) throws InterruptedException {
         IMap<String, InetSocketAddress> traineeParticipantMap = traineeClient.getMap(Trainee.TRAINEE_PARTICIPANT_MAP);
 
         boolean found = false;
-        for (int l = 0; l < 300; l++) {
+        for (int l = 0; l < traineeTimeoutSec; l++) {
             if (traineeParticipantMap.containsKey(jvm.getId())) {
                 InetSocketAddress address = traineeParticipantMap.remove(jvm.getId());
                 jvm.setAddress(address);
@@ -283,8 +283,8 @@ public abstract class Coach {
         }
 
         if (!found) {
-            throw new RuntimeException(format("Trainee %s on host %s didn't start up in time",
-                    jvm.getId(), coachHz.getCluster().getLocalMember().getInetSocketAddress()));
+            throw new RuntimeException(format("Trainee %s on host %s didn't start within %s seconds",
+                    jvm.getId(), coachHz.getCluster().getLocalMember().getInetSocketAddress(),traineeTimeoutSec));
         }
         log.log(Level.INFO, "Trainee: " + jvm.getId() + " Started");
     }

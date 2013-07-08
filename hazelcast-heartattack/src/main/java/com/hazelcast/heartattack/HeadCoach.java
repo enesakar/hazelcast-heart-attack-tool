@@ -271,6 +271,8 @@ public class HeadCoach extends Coach {
         OptionSpec traineeTrackLoggingSpec = parser.accepts("traineeTrackLogging", "If the coach is tracking trainee logging");
         OptionSpec<Integer> traineeCountSpec = parser.accepts("traineeVmCount", "Number of trainee VM's per coach")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(1);
+        OptionSpec<Integer> traineeStartupTimeoutSpec = parser.accepts("traineeStartupTimeout", "The startup timeout in seconds for a trainee")
+                .withRequiredArg().ofType(Integer.class).defaultsTo(60);
         OptionSpec<Boolean> traineeRefreshSpec = parser.accepts("traineeFresh", "If the trainee VM's should be replaced after every workout")
                 .withRequiredArg().ofType(Boolean.class).defaultsTo(false);
         OptionSpec<Boolean> failFastSpec = parser.accepts("failFast", "It the workout should fail immediately when an exercise from a workout fails instead of continuing ")
@@ -317,6 +319,7 @@ public class HeadCoach extends Coach {
             traineeSettings.setTrackLogging(options.has(traineeTrackLoggingSpec));
             traineeSettings.setVmOptions(options.valueOf(traineeVmOptionsSpec));
             traineeSettings.setTraineeCount(options.valueOf(traineeCountSpec));
+            traineeSettings.setTraineeStartupTimeout(options.valueOf(traineeStartupTimeoutSpec));
             traineeSettings.setHzConfig(Utils.asText(traineeHzFile));
             traineeSettings.setRefreshJvm(options.valueOf(traineeRefreshSpec));
 

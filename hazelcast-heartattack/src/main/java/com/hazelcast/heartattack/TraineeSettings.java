@@ -7,7 +7,16 @@ public class TraineeSettings implements Serializable{
     private boolean trackLogging;
     private String hzConfig;
     private int traineeCount;
+    private int traineeStartupTimeout;
     private boolean refreshJvm;
+
+    public int getTraineeStartupTimeout() {
+        return traineeStartupTimeout;
+    }
+
+    public void setTraineeStartupTimeout(int traineeStartupTimeout) {
+        this.traineeStartupTimeout = traineeStartupTimeout;
+    }
 
     public boolean isRefreshJvm() {
         return refreshJvm;
@@ -56,6 +65,7 @@ public class TraineeSettings implements Serializable{
                 ", vmOptions='" + vmOptions + '\'' +
                 ", trackLogging=" + trackLogging +
                 ", traineeVmCount=" + traineeCount +
+                ", traineeStartupTimeout=" + traineeStartupTimeout +
                 ", refreshJvm=" + refreshJvm +
                 '}';
     }

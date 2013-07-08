@@ -42,7 +42,11 @@ of a running job.
 - when an exception is thrown by one of the ExerciseInstance method, it isn't correctly translated to a heartattack (lots
 of information missing).
 
+- the addresspicker issue that prevent creating large number of trainee vm's
+
 DONE
+
+- trainee startup timeout should be configurable
 
 - when a coach terminates, it should terminate the clients.
 
