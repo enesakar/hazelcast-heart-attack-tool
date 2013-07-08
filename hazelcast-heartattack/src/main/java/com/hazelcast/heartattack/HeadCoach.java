@@ -27,6 +27,7 @@ import static com.hazelcast.heartattack.Utils.*;
 import static java.lang.String.format;
 
 public class HeadCoach extends Coach {
+
     final static ILogger log = Logger.getLogger(HeadCoach.class.getName());
 
     private IExecutorService coachExecutor;
