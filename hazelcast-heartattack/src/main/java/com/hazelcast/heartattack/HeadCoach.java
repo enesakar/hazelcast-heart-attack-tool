@@ -18,12 +18,11 @@ import joptsimple.OptionSpec;
 
 import java.io.File;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 import java.util.logging.Level;
 
-import static com.hazelcast.heartattack.Utils.*;
+import static com.hazelcast.heartattack.Utils.exitWithError;
+import static com.hazelcast.heartattack.Utils.getVersion;
 import static java.lang.String.format;
 
 public class HeadCoach extends Coach {
@@ -160,15 +159,15 @@ public class HeadCoach extends Coach {
         log.log(Level.INFO, format("Starting a grand total of %s Trainee Java Virtual Machines", totalTraineeCount));
         submitToAllAndWait(coachExecutor, new SpawnTrainees(traineeSettings));
         long durationMs = System.currentTimeMillis() - startMs;
-        log.log(Level.INFO, (format("Finished starting a grand total of %s Trainees after %s ms\n", totalTraineeCount,durationMs)));
+        log.log(Level.INFO, (format("Finished starting a grand total of %s Trainees after %s ms\n", totalTraineeCount, durationMs)));
         return startMs;
     }
 
-    private void echoToCoaches(String s){
-        try{
-            submitToAllAndWait(coachExecutor,new EchoTask(s));
-        }catch(Exception e){
-            log.log(Level.SEVERE, "Failed to echo to all members",e);
+    private void echoToCoaches(String s) {
+        try {
+            submitToAllAndWait(coachExecutor, new EchoTask(s));
+        } catch (Exception e) {
+            log.log(Level.SEVERE, "Failed to echo to all members", e);
         }
     }
 
@@ -177,9 +176,9 @@ public class HeadCoach extends Coach {
         int big = seconds / period;
         int small = seconds % period;
 
-        for(int k=1;k<=big;k++){
+        for (int k = 1; k <= big; k++) {
             Utils.sleepSeconds(period);
-            echoToCoaches(format(txt,period*k));
+            echoToCoaches(format(txt, period * k));
         }
 
         Utils.sleepSeconds(small);
@@ -231,9 +230,9 @@ public class HeadCoach extends Coach {
         Future future = traineeExecutor.submit(task);
         try {
             Object o = future.get();
-            if(o instanceof GenericError){
-                GenericError error = (GenericError)o;
-                throw new ExecutionException(error.getMessage()+": details:"+error.getDetails(),null);
+            if (o instanceof GenericError) {
+                GenericError error = (GenericError) o;
+                throw new ExecutionException(error.getMessage() + ": details:" + error.getDetails(), null);
             }
         } catch (ExecutionException e) {
             heartAttack(new HeartAttack(null, null, null, null, exercise, e));
@@ -241,7 +240,7 @@ public class HeadCoach extends Coach {
         }
     }
 
-    private void shoutAndWait(Callable task)  throws InterruptedException, ExecutionException{
+    private void shoutAndWait(Callable task) throws InterruptedException, ExecutionException {
         submitToAllAndWait(coachExecutor, new ShoutTask(task));
     }
 
@@ -253,11 +252,14 @@ public class HeadCoach extends Coach {
     private void getAllFutures(Collection<Future> futures) throws InterruptedException, ExecutionException {
         for (Future future : futures) {
             try {
-                Object o = future.get();
-                if(o instanceof GenericError){
-                    GenericError error = (GenericError)o;
-                    throw new ExecutionException(error.getMessage()+": details:"+error.getDetails(),null);
+                Object o = future.get(1000, TimeUnit.SECONDS);
+                if (o instanceof GenericError) {
+                    GenericError error = (GenericError) o;
+                    throw new ExecutionException(error.getMessage() + ": details:" + error.getDetails(), null);
                 }
+            }catch(TimeoutException e){
+                heartAttack(new HeartAttack(null, null, null, null, exercise, e));
+                throw new RuntimeException(e);
             } catch (ExecutionException e) {
                 heartAttack(new HeartAttack(null, null, null, null, exercise, e));
                 throw e;

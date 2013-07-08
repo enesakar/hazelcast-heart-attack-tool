@@ -330,11 +330,10 @@ public abstract class Coach {
                         member = m;
                         break;
                     }
-
                 }
 
-                if(member == null){
-                    throw new RuntimeException("No member found for address: "+address);
+                if (member == null) {
+                    throw new RuntimeException("No member found for address: " + address);
                 }
 
                 jvm.setMember(member);
