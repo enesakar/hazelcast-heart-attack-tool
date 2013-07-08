@@ -358,6 +358,4 @@ public class HeadCoach extends Coach {
         workout.getExerciseList().addAll(exercises);
         return workout;
     }
-
-
 }

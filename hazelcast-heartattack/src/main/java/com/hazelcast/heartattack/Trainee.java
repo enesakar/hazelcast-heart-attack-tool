@@ -14,6 +14,9 @@ import java.util.logging.Level;
 
 public class Trainee {
 
+    final static ILogger log = Logger.getLogger(Trainee.class.getName());
+
+
     public static final String TRAINEE_PARTICIPANT_MAP = "Trainee:ParticipantMap";
     public static final String TRAINEE_EXECUTOR = "Trainee:Executor";
 
@@ -31,7 +34,10 @@ public class Trainee {
     }
 
     public void start() {
+        log.log(Level.INFO, "Creating Trainee HazelcastInstance");
         this.hz = createHazelcastInstance();
+        log.log(Level.INFO, "Successfully created Trainee HazelcastInstance");
+
         this.map = hz.getMap(TRAINEE_PARTICIPANT_MAP);
         this.map.put(traineeId, hz.getCluster().getLocalMember().getInetSocketAddress());
     }
@@ -49,20 +55,20 @@ public class Trainee {
     }
 
     public static void main(String[] args) {
-        System.out.println("Starting Hazelcast Heart Attack Trainee");
+        log.log(Level.INFO, "Starting Hazelcast Heart Attack Trainee");
 
         String traineeId = args[0];
-        System.out.println("Trainee id:" + traineeId);
+        log.log(Level.INFO, "Trainee id:" + traineeId);
         String traineeHzFile = args[1];
-        System.out.println("Trainee hz config file:" + traineeHzFile);
+        log.log(Level.INFO, "Trainee hz config file:" + traineeHzFile);
 
-        System.setProperty("traineeId",traineeId);
+        System.setProperty("traineeId", traineeId);
 
         Trainee trainee = new Trainee();
         trainee.setTraineeId(traineeId);
         trainee.setTraineeHzFile(traineeHzFile);
         trainee.start();
 
-        System.out.println( "Successfully started Hazelcast Heart Attack Trainee:"+traineeId);
+        log.log(Level.INFO, "Successfully started Hazelcast Heart Attack Trainee:" + traineeId);
     }
 }

@@ -193,7 +193,7 @@ public abstract class Coach {
     }
 
     public void spawnTrainees(TraineeSettings settings) throws Exception {
-        log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines", settings.getTraineeCount()));
+        log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines using settings %s", settings.getTraineeCount(),settings));
 
         File traineeHzFile = File.createTempFile("trainee-hazelcast", "xml");
         traineeHzFile.deleteOnExit();
