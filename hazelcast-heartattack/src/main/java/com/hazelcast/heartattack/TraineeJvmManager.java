@@ -55,7 +55,7 @@ public class TraineeJvmManager {
         return traineeJvms;
     }
 
-    public void spawnTrainees(TraineeSettings settings) throws Exception {
+    public void spawn(TraineeSettings settings) throws Exception {
         log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines using settings %s", settings.getTraineeCount(), settings));
 
         File traineeHzFile = File.createTempFile("trainee-hazelcast", "xml");
@@ -166,7 +166,7 @@ public class TraineeJvmManager {
         log.log(Level.INFO, "Trainee: " + jvm.getId() + " Started");
     }
 
-    public void destroyTrainees() {
+    public void destroyAll() {
         if (traineeClient != null) {
             traineeClient.getLifecycleService().shutdown();
         }

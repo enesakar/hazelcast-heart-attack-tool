@@ -12,22 +12,22 @@ import java.util.logging.Level;
 
 import static java.lang.String.format;
 
-public class DestroyTrainees implements Callable, Serializable, HazelcastInstanceAware {
-    private final static ILogger log = Logger.getLogger(DestroyTrainees.class);
+public class TerminateWorkout implements Callable, Serializable, HazelcastInstanceAware {
+    private final static ILogger log = Logger.getLogger(TerminateWorkout.class);
 
     private transient HazelcastInstance hz;
 
     @Override
     public Object call() throws Exception {
-        log.log(Level.INFO, "DestroyTraineesTask");
+        log.log(Level.INFO, "TerminateWorkout");
 
         long startMs = System.currentTimeMillis();
 
         Coach coach = (Coach) hz.getUserContext().get(Coach.KEY_COACH);
-        coach.getTraineeJvmManager().destroyTrainees();
+        coach.terminateWorkout();
 
         long durationMs = System.currentTimeMillis() - startMs;
-        log.log(Level.INFO, format("Destroyed trainees in %s ms", durationMs));
+        log.log(Level.INFO, format("TerminateWorkout finished in %s ms", durationMs));
         return null;
     }
 
