@@ -19,9 +19,7 @@ import joptsimple.OptionSpec;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 
@@ -31,6 +29,8 @@ import static java.lang.String.format;
 public class Manager {
 
     public final static File heartAttackHome = getHeartAttackHome();
+
+    private final List<HeartAttack> heartAttackList = Collections.synchronizedList(new LinkedList<HeartAttack>());
 
     final static ILogger log = Logger.getLogger(Manager.class.getName());
 
@@ -63,6 +63,7 @@ public class Manager {
                 Object messageObject = message.getMessageObject();
                 if (messageObject instanceof HeartAttack) {
                     HeartAttack heartAttack = (HeartAttack) messageObject;
+                    heartAttackList.add(heartAttack);
                     log.log(Level.SEVERE, "Remote machine heart attack detected:" + heartAttack);
                 } else if (messageObject instanceof Exception) {
                     Exception e = (Exception) messageObject;
@@ -81,29 +82,27 @@ public class Manager {
         //the manager needs to sleep some to make sure that it will get heartattacks if they are there.
         sleepSeconds(10);
 
-        //runWorkout();
-
         long elapsedMs = System.currentTimeMillis() - startMs;
+
+        client.getLifecycleService().shutdown();
+
+        if (heartAttackList.isEmpty()) {
+            log.log(Level.INFO, "-----------------------------------------------------------------------------");
+            log.log(Level.INFO, "No heart attacks have been detected!");
+            log.log(Level.INFO, "-----------------------------------------------------------------------------");
+            System.exit(0);
+        } else {
+            StringBuilder sb = new StringBuilder();
+            sb.append(heartAttackList.size()).append(" Heart attacks have been detected!!!\n");
+            for (HeartAttack heartAttack : heartAttackList) {
+                sb.append("-----------------------------------------------------------------------------\n");
+                sb.append(heartAttack).append('\n');
+            }
+            sb.append("-----------------------------------------------------------------------------\n");
+            log.log(Level.SEVERE, sb.toString());
+            System.exit(1);
+        }
         log.log(Level.INFO, format("Total running time: %s seconds", elapsedMs / 1000));
-
-        //  coachHz.getLifecycleService().shutdown();
-
-//        if (heartAttacks.isEmpty()) {
-//            log.log(Level.INFO, "-----------------------------------------------------------------------------");
-//            log.log(Level.INFO, "No heartattacks have been detected!");
-//            log.log(Level.INFO, "-----------------------------------------------------------------------------");
-//            System.exit(0);
-//        } else {
-//            StringBuilder sb = new StringBuilder();
-//            sb.append(heartAttacks.size()).append(" Heartattacks have been detected!!!\n");
-//            for (HeartAttack heartAttack : heartAttacks) {
-//                sb.append("-----------------------------------------------------------------------------\n");
-//                sb.append(heartAttack).append('\n');
-//            }
-//            sb.append("-----------------------------------------------------------------------------\n");
-//            log.log(Level.SEVERE, sb.toString());
-//            System.exit(1);
-//        }
     }
 
     public static void main(String[] args) throws Exception {

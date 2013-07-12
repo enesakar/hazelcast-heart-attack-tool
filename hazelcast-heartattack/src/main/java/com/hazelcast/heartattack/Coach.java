@@ -50,18 +50,7 @@ public class Coach {
     private List<HeartAttack> heartAttacks = Collections.synchronizedList(new LinkedList<HeartAttack>());
     private IExecutorService coachExecutor;
 
-    public Coach() {
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            public void run() {
-                for (TraineeJvm jvm : traineeJvms) {
-                    log.log(Level.INFO, "Destroying trainee : " + jvm.getId());
-                    jvm.getProcess().destroy();
-                }
-            }
-        });
-    }
-
-    public ITopic getStatusTopic() {
+      public ITopic getStatusTopic() {
         return statusTopic;
     }
 
@@ -289,8 +278,7 @@ public class Coach {
         });
         coachExecutor = coachHz.getExecutorService("Coach:Executor");
 
-        new Thread(new HeartAttackMonitor()).start();
-        return coachHz;
+         return coachHz;
     }
 
     public void heartAttack(HeartAttack heartAttack) {
@@ -327,97 +315,6 @@ public class Coach {
                         e);
                 heartAttack(heartAttack);
             }
-        }
-    }
-
-    private class HeartAttackMonitor implements Runnable {
-        public void run() {
-            for (; ; ) {
-                for (TraineeJvm jvm : traineeJvms) {
-                    HeartAttack heartAttack = null;
-
-                    if (heartAttack == null) {
-                        heartAttack = detectHeartAttackFile(jvm);
-                    }
-
-                    if (heartAttack == null) {
-                        heartAttack = detectUnexpectedExit(jvm);
-                    }
-
-                    if (heartAttack == null) {
-                        heartAttack = detectMembershipFailure(jvm);
-                    }
-
-                    if (heartAttack != null) {
-                        traineeJvms.remove(jvm);
-                        heartAttack(heartAttack);
-                    }
-                }
-
-                Utils.sleepSeconds(1);
-            }
-        }
-
-        private HeartAttack detectMembershipFailure(TraineeJvm jvm) {
-            //if the jvm is not assigned a hazelcast address yet.
-            if (jvm.getMember() == null) {
-                return null;
-            }
-
-            Member member = findMember(jvm);
-            if (member == null) {
-                jvm.getProcess().destroy();
-                return new HeartAttack("Hazelcast membership failure (member missing)",
-                        coachHz.getCluster().getLocalMember().getInetSocketAddress(),
-                        jvm.getMember().getInetSocketAddress(),
-                        jvm.getId(),
-                        exercise);
-            }
-
-            return null;
-        }
-
-        private Member findMember(TraineeJvm jvm) {
-            if (traineeClient == null) return null;
-
-            for (Member member : traineeClient.getCluster().getMembers()) {
-                if (member.getInetSocketAddress().equals(jvm.getMember().getInetSocketAddress())) {
-                    return member;
-                }
-            }
-
-            return null;
-        }
-
-        private HeartAttack detectHeartAttackFile(TraineeJvm jvm) {
-            File file = new File(traineesHome, jvm.getId() + ".heartattack");
-            if (!file.exists()) {
-                return null;
-            }
-            HeartAttack heartAttack = new HeartAttack(
-                    "out of memory",
-                    coachHz.getCluster().getLocalMember().getInetSocketAddress(),
-                    jvm.getMember().getInetSocketAddress(),
-                    jvm.getId(),
-                    exercise);
-            jvm.getProcess().destroy();
-            return heartAttack;
-        }
-
-        private HeartAttack detectUnexpectedExit(TraineeJvm jvm) {
-            Process process = jvm.getProcess();
-            try {
-                if (process.exitValue() != 0) {
-                    return new HeartAttack(
-                            "exit code not 0",
-                            coachHz.getCluster().getLocalMember().getInetSocketAddress(),
-                            jvm.getMember().getInetSocketAddress(),
-                            jvm.getId(),
-                            exercise);
-                }
-            } catch (IllegalThreadStateException ignore) {
-            }
-            return null;
         }
     }
 
@@ -557,8 +454,19 @@ public class Coach {
         }
     }
 
-    private void run() throws Exception {
+    public void start() throws Exception {
         initCoachHazelcastInstance();
+        new Thread(new HeartAttackMonitor(this)).start();
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                for (TraineeJvm jvm : traineeJvms) {
+                    log.log(Level.INFO, "Destroying trainee : " + jvm.getId());
+                    jvm.getProcess().destroy();
+                }
+            }
+        });
+
         log.log(Level.INFO, "Hazelcast Assistant Coach is Ready for action");
     }
 
@@ -586,7 +494,7 @@ public class Coach {
                 exitWithError(format("Coach Hazelcast config file [%s] does not exist\n", coachHzFile));
             }
             coach.setCoachHzFile(coachHzFile);
-            coach.run();
+            coach.start();
         } catch (OptionException e) {
             exitWithError(e.getMessage() + "\nUse --help to get overview of the help options.");
         }
