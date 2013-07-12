@@ -7,11 +7,11 @@ import java.io.Serializable;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
-public class EchoTask implements Callable, Serializable {
-    final static ILogger log = Logger.getLogger(EchoTask.class.getName());
+public class Echo implements Callable, Serializable {
+    final static ILogger log = Logger.getLogger(Echo.class.getName());
     private final String msg;
 
-    public EchoTask(String msg) {
+    public Echo(String msg) {
         this.msg = msg;
     }
 

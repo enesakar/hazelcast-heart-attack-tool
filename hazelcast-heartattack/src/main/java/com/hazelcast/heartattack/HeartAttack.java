@@ -76,14 +76,6 @@ public class HeartAttack implements Serializable {
         sb.append("   time=").append(time).append("\n");
         sb.append("   traineeAddress=").append(traineeAddress).append("\n");
         sb.append("   traineeId=").append(traineeId).append("\n");
-        if (cause != null) {
-            StringWriter sw = new StringWriter();
-            cause.printStackTrace(new PrintWriter(sw));
-            sb.append("   cause=").append(sw.toString()).append("\n");
-        } else {
-            sb.append("   cause=").append("null").append("\n");
-        }
-
         if (exercise != null) {
             String[] exerciseString = exercise.toString().split("\n");
             sb.append("   exercise=").append(exerciseString[0]).append("\n");
@@ -93,6 +85,15 @@ public class HeartAttack implements Serializable {
         }else{
             sb.append("   exercise=").append("null").append("\n");
         }
+
+        if (cause != null) {
+            StringWriter sw = new StringWriter();
+            cause.printStackTrace(new PrintWriter(sw));
+            sb.append("   cause=").append(sw.toString()).append("\n");
+        } else {
+            sb.append("   cause=").append("null").append("\n");
+        }
+
         sb.append("]");
         return sb.toString();
     }

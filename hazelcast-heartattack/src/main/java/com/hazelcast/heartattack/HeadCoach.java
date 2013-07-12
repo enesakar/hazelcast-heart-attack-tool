@@ -40,11 +40,7 @@ public class HeadCoach extends Coach {
         this.workout = workout;
     }
 
-    public HazelcastInstance getCoachHazelcastInstance() {
-        return coachHz;
-    }
-
-    public void setDurationSec(Integer durationSec) {
+     public void setDurationSec(Integer durationSec) {
         this.durationSec = durationSec;
     }
 
@@ -71,6 +67,7 @@ public class HeadCoach extends Coach {
     private void run() throws Exception {
         initCoachHazelcastInstance();
 
+        HazelcastInstance coachHz= getCoachHz();
         Set<Member> members = coachHz.getCluster().getMembers();
         log.log(Level.INFO, format("Trainee track logging: %s", traineeSettings.isTrackLogging()));
         log.log(Level.INFO, format("Trainee's per coach: %s", traineeSettings.getTraineeCount()));
@@ -81,7 +78,7 @@ public class HeadCoach extends Coach {
             public void run() {
                 for (; ; ) {
                     try {
-                        final HeartAttack heartAttack = heartAttackQueue.take();
+                        final HeartAttack heartAttack = getHeartAttackQueue().take();
                         submitToAllAndWait(coachExecutor, new EchoHeartAttack(heartAttack));
                         heartAttacks.add(heartAttack);
                     } catch (Exception e) {
@@ -103,12 +100,12 @@ public class HeadCoach extends Coach {
 
         if (heartAttacks.isEmpty()) {
             log.log(Level.INFO, "-----------------------------------------------------------------------------");
-            log.log(Level.INFO, "No heart attacks have been detected!");
+            log.log(Level.INFO, "No heartattacks have been detected!");
             log.log(Level.INFO, "-----------------------------------------------------------------------------");
             System.exit(0);
         } else {
             StringBuilder sb = new StringBuilder();
-            sb.append(heartAttacks.size()).append(" Heart attacks have been detected!!!\n");
+            sb.append(heartAttacks.size()).append(" Heartattacks have been detected!!!\n");
             for (HeartAttack heartAttack : heartAttacks) {
                 sb.append("-----------------------------------------------------------------------------\n");
                 sb.append(heartAttack).append('\n');
@@ -155,7 +152,7 @@ public class HeadCoach extends Coach {
     private long startTrainees() throws Exception {
         long startMs = System.currentTimeMillis();
         final int traineeCount = traineeSettings.getTraineeCount();
-        final int totalTraineeCount = traineeCount * coachHz.getCluster().getMembers().size();
+        final int totalTraineeCount = traineeCount * getCoachHz().getCluster().getMembers().size();
         log.log(Level.INFO, format("Starting a grand total of %s Trainee Java Virtual Machines", totalTraineeCount));
         submitToAllAndWait(coachExecutor, new SpawnTrainees(traineeSettings));
         long durationMs = System.currentTimeMillis() - startMs;
@@ -165,7 +162,7 @@ public class HeadCoach extends Coach {
 
     private void echoToCoaches(String s) {
         try {
-            submitToAllAndWait(coachExecutor, new EchoTask(s));
+            submitToAllAndWait(coachExecutor, new Echo(s));
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed to echo to all members", e);
         }
@@ -227,7 +224,7 @@ public class HeadCoach extends Coach {
     }
 
     private void submitToOneAndWait(Callable task) throws InterruptedException, ExecutionException {
-        Future future = traineeExecutor.submit(task);
+        Future future = getTraineeExecutor().submit(task);
         try {
             Object o = future.get();
             if (o instanceof GenericError) {
@@ -235,7 +232,7 @@ public class HeadCoach extends Coach {
                 throw new ExecutionException(error.getMessage() + ": details:" + error.getDetails(), null);
             }
         } catch (ExecutionException e) {
-            heartAttack(new HeartAttack(null, null, null, null, exercise, e));
+            heartAttack(new HeartAttack(null, null, null, null, getExercise(), e));
             throw e;
         }
     }
@@ -258,10 +255,10 @@ public class HeadCoach extends Coach {
                     throw new ExecutionException(error.getMessage() + ": details:" + error.getDetails(), null);
                 }
             }catch(TimeoutException e){
-                heartAttack(new HeartAttack(null, null, null, null, exercise, e));
+                heartAttack(new HeartAttack(null, null, null, null, getExercise(), e));
                 throw new RuntimeException(e);
             } catch (ExecutionException e) {
-                heartAttack(new HeartAttack(null, null, null, null, exercise, e));
+                heartAttack(new HeartAttack(null, null, null, null, getExercise(), e));
                 throw e;
             }
         }

@@ -38,12 +38,12 @@ public abstract class Coach {
     public final static File heartAttackHome = getHeartAttackHome();
     public final static File traineesHome = new File(getHeartAttackHome(), "trainees");
 
-    protected File coachHzFile;
-    protected volatile HazelcastInstance coachHz;
-    protected volatile HazelcastInstance traineeClient;
-    protected volatile IExecutorService traineeExecutor;
-    protected volatile IQueue<HeartAttack> heartAttackQueue;
-    protected volatile Exercise exercise;
+    private File coachHzFile;
+    private volatile HazelcastInstance coachHz;
+    private volatile HazelcastInstance traineeClient;
+    private volatile IExecutorService traineeExecutor;
+    private volatile IQueue<HeartAttack> heartAttackQueue;
+    private volatile Exercise exercise;
     private final List<TraineeJvm> traineeJvms = new CopyOnWriteArrayList<TraineeJvm>();
     private final AtomicBoolean javaHomePrinted = new AtomicBoolean();
 
@@ -58,6 +58,10 @@ public abstract class Coach {
         });
     }
 
+    public IQueue<HeartAttack> getHeartAttackQueue() {
+        return heartAttackQueue;
+    }
+
     public HazelcastInstance getTraineeClient() {
         return traineeClient;
     }
@@ -68,6 +72,10 @@ public abstract class Coach {
 
     public List<TraineeJvm> getTrainees() {
         return traineeJvms;
+    }
+
+    public HazelcastInstance getCoachHazelcastInstance() {
+        return coachHz;
     }
 
     public Exercise getExercise() {

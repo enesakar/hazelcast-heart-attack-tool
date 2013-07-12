@@ -23,7 +23,7 @@ public class ShoutTask implements Callable, Serializable, HazelcastInstanceAware
 
     @Override
     public Object call() throws Exception {
-        log.log(Level.INFO, "CoachForwardTask");
+        log.log(Level.INFO, "ShoutTask");
 
         Coach coach = (Coach) hz.getUserContext().get(Coach.KEY_COACH);
         coach.shoutToTrainees(task);
