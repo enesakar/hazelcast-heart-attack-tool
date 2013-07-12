@@ -80,7 +80,9 @@ public class Manager {
         future.get();
 
         //the manager needs to sleep some to make sure that it will get heartattacks if they are there.
+        log.log(Level.INFO, "Starting cooldown (10 sec)");
         sleepSeconds(10);
+        log.log(Level.INFO, "Finished cooldown");
 
         long elapsedMs = System.currentTimeMillis() - startMs;
 
