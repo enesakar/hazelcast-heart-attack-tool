@@ -5,7 +5,7 @@ import com.hazelcast.core.Member;
 
 import java.io.File;
 
-class HeartAttackMonitor implements Runnable {
+public class HeartAttackMonitor implements Runnable {
 
     private Coach coach;
 
@@ -15,7 +15,7 @@ class HeartAttackMonitor implements Runnable {
 
     public void run() {
         for (; ; ) {
-            for (TraineeJvm jvm : coach.getTrainees()) {
+            for (TraineeJvm jvm : coach.getTraineeJvmManager().getTraineeJvms()) {
                 HeartAttack heartAttack = null;
 
                 if (heartAttack == null) {
@@ -31,7 +31,7 @@ class HeartAttackMonitor implements Runnable {
                 }
 
                 if (heartAttack != null) {
-                    coach.getTrainees().remove(jvm);
+                    coach.getTraineeJvmManager().destroy(jvm);
                     coach.heartAttack(heartAttack);
                 }
             }
@@ -60,7 +60,7 @@ class HeartAttackMonitor implements Runnable {
     }
 
     private Member findMember(TraineeJvm jvm) {
-        final HazelcastInstance traineeClient = coach.getTraineeClient();
+        final HazelcastInstance traineeClient = coach.getTraineeJvmManager().getTraineeClient();
         if (traineeClient == null) return null;
 
         for (Member member : traineeClient.getCluster().getMembers()) {

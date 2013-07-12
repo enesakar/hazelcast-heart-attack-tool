@@ -24,7 +24,7 @@ public class DestroyTrainees implements Callable, Serializable, HazelcastInstanc
         long startMs = System.currentTimeMillis();
 
         Coach coach = (Coach) hz.getUserContext().get(Coach.KEY_COACH);
-        coach.destroyTrainees();
+        coach.getTraineeJvmManager().destroyTrainees();
 
         long durationMs = System.currentTimeMillis() - startMs;
         log.log(Level.INFO, format("Destroyed trainees in %s ms", durationMs));

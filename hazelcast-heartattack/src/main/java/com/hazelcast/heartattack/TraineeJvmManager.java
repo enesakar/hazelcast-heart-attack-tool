@@ -4,6 +4,8 @@ import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
@@ -23,12 +25,35 @@ import static com.hazelcast.heartattack.Utils.getHeartAttackHome;
 import static java.lang.String.format;
 
 public class TraineeJvmManager {
-   /*
-    final static ILogger log = Logger.getLogger(TraineeJvmManager.class.getName());
 
-    public final static File heartAttackHome = getHeartAttackHome();
+    final static ILogger log = Logger.getLogger(TraineeJvmManager.class);
     private final AtomicBoolean javaHomePrinted = new AtomicBoolean();
+    public final static File userDir = new File(System.getProperty("user.dir"));
+    public final static String classpath = System.getProperty("java.class.path");
+    public final static File heartAttackHome = getHeartAttackHome();
+    public final static File traineesHome = new File(getHeartAttackHome(), "trainees");
+
     private final List<TraineeJvm> traineeJvms = new CopyOnWriteArrayList<TraineeJvm>();
+    private final Coach coach;
+    private HazelcastInstance traineeClient;
+    private IExecutorService traineeExecutor;
+
+    public TraineeJvmManager(Coach coach) {
+        this.coach = coach;
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                for (TraineeJvm jvm : traineeJvms) {
+                    log.log(Level.INFO, "Destroying trainee : " + jvm.getId());
+                    jvm.getProcess().destroy();
+                }
+            }
+        });
+    }
+
+    public List<TraineeJvm> getTraineeJvms() {
+        return traineeJvms;
+    }
 
     public void spawnTrainees(TraineeSettings settings) throws Exception {
         log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines using settings %s", settings.getTraineeCount(), settings));
@@ -136,7 +161,7 @@ public class TraineeJvmManager {
 
         if (!found) {
             throw new RuntimeException(format("Timeout: trainee %s on host %s didn't start within %s seconds",
-                    jvm.getId(), coachHz.getCluster().getLocalMember().getInetSocketAddress(), traineeTimeoutSec));
+                    jvm.getId(), coach.getCoachHz().getCluster().getLocalMember().getInetSocketAddress(), traineeTimeoutSec));
         }
         log.log(Level.INFO, "Trainee: " + jvm.getId() + " Started");
     }
@@ -164,5 +189,18 @@ public class TraineeJvmManager {
                 log.log(Level.INFO, format("trainee process %s exited with exit code: %s", jvm.getId(), exitCode));
             }
         }
-    }   */
+    }
+
+    public IExecutorService getTraineeExecutor() {
+        return traineeExecutor;
+    }
+
+    public HazelcastInstance getTraineeClient() {
+        return traineeClient;
+    }
+
+    public void destroy(TraineeJvm jvm) {
+        jvm.getProcess().destroy();
+        traineeJvms.remove(jvm);
+    }
 }

@@ -29,7 +29,7 @@ public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceA
 
         try {
             Coach coach = (Coach) hz.getUserContext().get(Coach.KEY_COACH);
-            coach.spawnTrainees(settings);
+            coach.getTraineeJvmManager().spawnTrainees(settings);
             return null;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed to spawn Trainee Virtual Machines", e);
