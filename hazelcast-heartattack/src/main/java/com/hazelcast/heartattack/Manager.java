@@ -28,14 +28,12 @@ import static java.lang.String.format;
 
 public class Manager {
 
-    public final static File heartAttackHome = getHeartAttackHome();
-
-    private final List<HeartAttack> heartAttackList = Collections.synchronizedList(new LinkedList<HeartAttack>());
-
-    final static ILogger log = Logger.getLogger(Manager.class.getName());
+    private final static File HEART_ATTACK_HOME = getHeartAttackHome();
+    private final static ILogger log = Logger.getLogger(Manager.class);
 
     private Workout workout;
     private File coachHzFile;
+    private final List<HeartAttack> heartAttackList = Collections.synchronizedList(new LinkedList<HeartAttack>());
 
     public void setWorkout(Workout workout) {
         this.workout = workout;
@@ -84,9 +82,10 @@ public class Manager {
         sleepSeconds(10);
         log.log(Level.INFO, "Finished cooldown");
 
-        long elapsedMs = System.currentTimeMillis() - startMs;
-
         client.getLifecycleService().shutdown();
+
+        long elapsedMs = System.currentTimeMillis() - startMs;
+        log.log(Level.INFO, format("Total running time: %s seconds", elapsedMs / 1000));
 
         if (heartAttackList.isEmpty()) {
             log.log(Level.INFO, "-----------------------------------------------------------------------------");
@@ -104,15 +103,13 @@ public class Manager {
             log.log(Level.SEVERE, sb.toString());
             System.exit(1);
         }
-        log.log(Level.INFO, format("Total running time: %s seconds", elapsedMs / 1000));
+
     }
-
-
 
     public static void main(String[] args) throws Exception {
         log.log(Level.INFO, "Hazelcast Heart Attack Manager");
         log.log(Level.INFO, format("Version: %s", getVersion()));
-        log.log(Level.INFO, format("HEART_ATTACK_HOME: %s", heartAttackHome));
+        log.log(Level.INFO, format("HEART_ATTACK_HOME: %s", HEART_ATTACK_HOME));
 
         OptionParser parser = new OptionParser();
         OptionSpec<Integer> durationSpec = parser.accepts("duration", "Number of seconds to run per workout)")
@@ -129,9 +126,9 @@ public class Manager {
         OptionSpec<String> traineeVmOptionsSpec = parser.accepts("traineeVmOptions", "Trainee VM options (quotes can be used)")
                 .withRequiredArg().ofType(String.class).defaultsTo("");
         OptionSpec<String> traineeHzFileSpec = parser.accepts("traineeHzFile", "The Hazelcast xml configuration file for the trainee")
-                .withRequiredArg().ofType(String.class).defaultsTo(heartAttackHome + File.separator + "conf" + File.separator + "trainee-hazelcast.xml");
+                .withRequiredArg().ofType(String.class).defaultsTo(HEART_ATTACK_HOME + File.separator + "conf" + File.separator + "trainee-hazelcast.xml");
         OptionSpec<String> coachHzFileSpec = parser.accepts("coachHzFile", "The Hazelcast xml configuration file for the coach")
-                .withRequiredArg().ofType(String.class).defaultsTo(heartAttackHome + File.separator + "conf" + File.separator + "coach-hazelcast.xml");
+                .withRequiredArg().ofType(String.class).defaultsTo(HEART_ATTACK_HOME + File.separator + "conf" + File.separator + "coach-hazelcast.xml");
 
         OptionSpec helpSpec = parser.accepts("help", "Show help").forHelp();
 
