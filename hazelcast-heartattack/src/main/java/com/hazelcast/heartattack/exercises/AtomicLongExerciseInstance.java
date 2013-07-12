@@ -37,7 +37,7 @@ public class AtomicLongExerciseInstance extends AbstractExerciseInstance<AtomicL
             count += counter.get();
         }
 
-        if (expectedCount != count || true) {
+        if (expectedCount != count) {
             throw new RuntimeException("Expected count: " + expectedCount + " but found count was: " + count);
         }
     }

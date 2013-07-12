@@ -105,6 +105,8 @@ public class Manager {
         log.log(Level.INFO, format("Total running time: %s seconds", elapsedMs / 1000));
     }
 
+
+
     public static void main(String[] args) throws Exception {
         log.log(Level.INFO, "Hazelcast Heart Attack Manager");
         log.log(Level.INFO, format("Version: %s", getVersion()));
