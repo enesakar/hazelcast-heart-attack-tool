@@ -12,7 +12,7 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 public class PrepareCoachForExercise implements Callable, Serializable, HazelcastInstanceAware {
-    final static ILogger log = Logger.getLogger(PrepareCoachForExercise.class.getName());
+    private final static ILogger log = Logger.getLogger(PrepareCoachForExercise.class);
 
     private transient HazelcastInstance hz;
     private final Exercise exercise;

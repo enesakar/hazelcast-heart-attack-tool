@@ -10,7 +10,7 @@ import java.util.logging.Level;
 
 public class MapExerciseInstance extends AbstractExerciseInstance<MapExercise> {
 
-    final static ILogger log = Logger.getLogger(MapExerciseInstance.class.getName());
+    private final static ILogger log = Logger.getLogger(MapExerciseInstance.class);
 
     private final static String alphabet = "abcdefghijklmnopqrstuvwxyz1234567890";
 

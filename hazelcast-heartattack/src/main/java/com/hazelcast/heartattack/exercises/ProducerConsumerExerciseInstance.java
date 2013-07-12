@@ -6,7 +6,7 @@ import com.hazelcast.logging.Logger;
 
 public class ProducerConsumerExerciseInstance extends AbstractExerciseInstance {
 
-    final static ILogger log = Logger.getLogger(MapExerciseInstance.class.getName());
+    private final static ILogger log = Logger.getLogger(MapExerciseInstance.class);
 
     @Override
     public void localSetup() throws Exception {

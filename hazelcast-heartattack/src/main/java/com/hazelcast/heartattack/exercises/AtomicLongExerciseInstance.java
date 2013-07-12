@@ -11,7 +11,7 @@ import java.util.logging.Level;
 
 public class AtomicLongExerciseInstance extends AbstractExerciseInstance<AtomicLongExercise> {
 
-    final static ILogger log = Logger.getLogger(AtomicLongExerciseInstance.class.getName());
+    private final static ILogger log = Logger.getLogger(AtomicLongExerciseInstance.class);
 
     private IAtomicLong totalCounter;
     private IAtomicLong[] counters;
@@ -37,7 +37,7 @@ public class AtomicLongExerciseInstance extends AbstractExerciseInstance<AtomicL
             count += counter.get();
         }
 
-        if (expectedCount != count) {
+        if (expectedCount != count || true) {
             throw new RuntimeException("Expected count: " + expectedCount + " but found count was: " + count);
         }
     }

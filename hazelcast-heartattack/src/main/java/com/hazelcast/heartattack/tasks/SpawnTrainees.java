@@ -14,7 +14,7 @@ import java.util.logging.Level;
 import static java.lang.String.format;
 
 public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceAware {
-    final static ILogger log = Logger.getLogger(SpawnTrainees.class.getName());
+    private final static ILogger log = Logger.getLogger(SpawnTrainees.class);
 
     private transient HazelcastInstance hz;
     private final TraineeSettings settings;

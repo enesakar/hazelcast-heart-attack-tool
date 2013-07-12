@@ -11,11 +11,10 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 public class ShoutTask implements Callable, Serializable, HazelcastInstanceAware {
-    final static ILogger log = Logger.getLogger(ShoutTask.class.getName());
+    private final static ILogger log = Logger.getLogger(ShoutTask.class);
 
     private final Callable task;
-
-    private HazelcastInstance hz;
+    private transient HazelcastInstance hz;
 
     public ShoutTask(Callable task) {
         this.task = task;

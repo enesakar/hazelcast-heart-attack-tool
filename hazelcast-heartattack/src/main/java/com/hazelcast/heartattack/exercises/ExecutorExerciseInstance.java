@@ -19,7 +19,7 @@ import java.util.logging.Level;
 
 public class ExecutorExerciseInstance extends AbstractExerciseInstance<ExecutorExercise> {
 
-    final static ILogger log = Logger.getLogger(ExecutorExerciseInstance.class.getName());
+    private final static ILogger log = Logger.getLogger(ExecutorExerciseInstance.class);
 
     private IExecutorService[] executors;
     private IAtomicLong executedCounter;

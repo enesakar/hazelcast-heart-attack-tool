@@ -17,7 +17,7 @@ import static java.lang.String.format;
 
 public class GenericExerciseTask implements Callable, Serializable, HazelcastInstanceAware {
 
-    final static ILogger log = Logger.getLogger(GenericExerciseTask.class.getName());
+    private final static ILogger log = Logger.getLogger(GenericExerciseTask.class);
 
     private transient HazelcastInstance hz;
     private final String methodName;

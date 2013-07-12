@@ -11,7 +11,8 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 public class EchoHeartAttack implements Callable, Serializable, HazelcastInstanceAware {
-    final static ILogger log = Logger.getLogger(EchoHeartAttack.class.getName());
+    private final static ILogger log = Logger.getLogger(EchoHeartAttack.class);
+
     private final HeartAttack heartAttack;
     private transient HazelcastInstance hz;
 

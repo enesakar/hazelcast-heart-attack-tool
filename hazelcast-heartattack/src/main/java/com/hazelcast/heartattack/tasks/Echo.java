@@ -8,7 +8,8 @@ import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
 public class Echo implements Callable, Serializable {
-    final static ILogger log = Logger.getLogger(Echo.class.getName());
+    private final static ILogger log = Logger.getLogger(Echo.class);
+
     private final String msg;
 
     public Echo(String msg) {

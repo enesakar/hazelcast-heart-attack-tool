@@ -42,9 +42,26 @@ of a running job.
 - when an exception is thrown by one of the ExerciseInstance method, it isn't correctly translated to a heartattack (lots
 of information missing).
 
-- the addresspicker issue that prevent creating large number of trainee vm's
+- option to embed a coach within a 'headcoach'
+
+- the manager needs to show time
+
+- the manager should have more advanced configuration to connect to the coach cluster, currently it needs to be on the
+same host.
 
 DONE
+
+- sending 'echo's should be done using a topic, not an executor. So the manager can participate as well
+
+- the addresspicker issue that prevent creating large number of trainee vm's
+
+- rename headcoach/assistentcoach.Probably assistent coach to coach and headcoach to manager
+
+- the heart attacks should be published on a topic
+
+- each coach needs to listen to the heart attack topic
+
+- the 'headcoach' should only do coordination, not actual running
 
 - trainee startup timeout should be configurable
 
