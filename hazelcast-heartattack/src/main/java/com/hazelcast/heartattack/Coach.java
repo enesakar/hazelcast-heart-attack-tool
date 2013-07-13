@@ -213,6 +213,11 @@ public class Coach {
         this.workout = workout;
         File junkDir = new File(getHeartAttackHome(), "junk");
         File destinationDir = new File(junkDir, workout.getId());
+
+        if(!destinationDir.mkdirs()){
+            throw new IOException(format("Can't create directory [%s]",destinationDir.getAbsolutePath()));
+        }
+
         if (content != null)
             Utils.unzip(content, destinationDir);
     }

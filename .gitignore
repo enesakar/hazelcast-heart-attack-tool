@@ -11,3 +11,4 @@ target/
 *.heartattack
 hazelcast-heartattack/trainees/*
 hazelcast-heartattack/logs/*
+hazelcast-heartattack/junk/*

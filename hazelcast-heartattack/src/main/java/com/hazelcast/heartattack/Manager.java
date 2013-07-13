@@ -114,9 +114,10 @@ public class Manager {
     }
 
     private void runWorkout(Workout workout) throws Exception {
-        log.log(Level.INFO, format("Exercises in workout: %s", workout.size()));
-        log.log(Level.INFO, format("Running time per exercise: %s seconds", workout.getDuration()));
-        log.log(Level.INFO, format("Expected total workout time: %s seconds", workout.size() * workout.getDuration()));
+        sendStatusUpdate(format("Starting workout: %s", workout.getId()));
+        sendStatusUpdate(format("Exercises in workout: %s", workout.size()));
+        sendStatusUpdate( format("Running time per exercise: %s seconds", workout.getDuration()));
+        sendStatusUpdate( format("Expected total workout time: %s seconds", workout.size() * workout.getDuration()));
 
         //we need to make sure that before we start, there are no trainees running anymore.
         //log.log(Level.INFO, "Ensuring trainee all killed");
@@ -140,6 +141,8 @@ public class Manager {
     }
 
     private boolean run(Workout workout, ExerciseRecipe exerciseRecipe) {
+        sendStatusUpdate(format("Running exercise : %s", exerciseRecipe.getExerciseId()));
+
         this.exerciseRecipe = exerciseRecipe;
         int oldCount = heartAttackList.size();
         try {
@@ -370,7 +373,7 @@ public class Manager {
     private static Workout createWorkout(File file) throws Exception {
         Properties properties = loadProperties(file);
 
-        LinkedHashMap<String, ExerciseRecipe> recipies = new LinkedHashMap<String, ExerciseRecipe>();
+        Map<String, ExerciseRecipe> recipies = new HashMap<String, ExerciseRecipe>();
         for (String property : properties.stringPropertyNames()) {
             String value = (String) properties.get(property);
             int indexOfDot = property.indexOf(".");
@@ -391,10 +394,12 @@ public class Manager {
             recipe.setProperty(field, value);
         }
 
+        List<String> recipeIds = new LinkedList<String>(recipies.keySet());
+        Collections.sort(recipeIds);
+
         Workout workout = new Workout();
-        for (Map.Entry<String, ExerciseRecipe> entry : recipies.entrySet()) {
-            ExerciseRecipe recipe = entry.getValue();
-            String recipeId = entry.getKey();
+        for (String recipeId : recipeIds) {
+            ExerciseRecipe recipe = recipies.get(recipeId);
             if (recipe.getClassname() == null) {
                 if ("".equals(recipeId)) {
                     throw new RuntimeException(format("There is no class set for the in property file [%s]." +
@@ -411,12 +416,20 @@ public class Manager {
         return workout;
     }
 
-    private static Properties loadProperties(File file) throws IOException {
+    private static Properties loadProperties(File file) {
         Properties properties = new Properties();
-        final FileInputStream in = new FileInputStream(file);
+        final FileInputStream in;
+        try {
+            in = new FileInputStream(file);
+        } catch (FileNotFoundException e) {
+            //should not be thrown since it is already verified that the property file exist.
+            throw new RuntimeException(e);
+        }
         try {
             properties.load(in);
             return properties;
+        }catch(IOException e){
+            throw new RuntimeException(format("Failed to load workout property file [%s]",file.getAbsolutePath()),e);
         } finally {
             Utils.closeQuietly(in);
         }

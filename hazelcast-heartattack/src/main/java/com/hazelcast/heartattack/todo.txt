@@ -26,11 +26,12 @@ same host.
 
 - the trainee logs should be written in the trainee subdir for that specific workout
 
-- copying of jars causes problem
-
 - traineeclasspath should not be only a dir, but also be a listing of jars/directories
 
 - when exercise fails to start correctly, the system keeps running and causing exception
+
+- copying of jars causes problem
+
 
 DONE
 

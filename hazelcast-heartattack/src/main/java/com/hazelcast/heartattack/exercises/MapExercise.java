@@ -30,6 +30,12 @@ public class MapExercise extends AbstractExercise {
 
     @Override
     public void localSetup() throws Exception {
+        log.log(Level.SEVERE, "threadCount: "+threadCount);
+        log.log(Level.SEVERE, "keyLength: "+keyLength);
+        log.log(Level.SEVERE, "valueLength: "+valueLength);
+        log.log(Level.SEVERE, "keyCount: "+keyCount);
+        log.log(Level.SEVERE, "valueCount: "+valueCount);
+
         map = hazelcastInstance.getMap(exerciseId + ":Map");
         for (int k = 0; k < threadCount; k++) {
             spawn(new Worker());
@@ -68,7 +74,6 @@ public class MapExercise extends AbstractExercise {
         public void run() {
             long iteration = 0;
             while (!stop) {
-                map.put(System.nanoTime(), System.nanoTime());
                 Object key = keys[random.nextInt(keys.length)];
                 Object value = values[random.nextInt(values.length)];
                 map.put(key, value);
@@ -78,5 +83,11 @@ public class MapExercise extends AbstractExercise {
                 iteration++;
             }
         }
+    }
+
+
+    public static void main(String[] args) throws Exception {
+        MapExercise mapExercise = new MapExercise();
+        new ExerciseRunner().run(mapExercise, 6000);
     }
 }

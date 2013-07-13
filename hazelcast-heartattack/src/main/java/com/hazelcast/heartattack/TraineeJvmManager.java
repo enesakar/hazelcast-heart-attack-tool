@@ -32,6 +32,7 @@ public class TraineeJvmManager {
     public final static String classpath = System.getProperty("java.class.path");
     public final static File heartAttackHome = getHeartAttackHome();
     public final static File traineesHome = new File(getHeartAttackHome(), "trainees");
+    public final static String classpathSperator=System.getProperty("path.separator");
 
     private final List<TraineeJvm> traineeJvms = new CopyOnWriteArrayList<TraineeJvm>();
     private final Coach coach;
@@ -114,10 +115,12 @@ public class TraineeJvmManager {
         args.add("-Dhazelcast.logging.type=log4j");
         args.add("-DtraineeId=" + traineeId);
         args.add("-Dlog4j.configuration=file:" + heartAttackHome + File.separator + "conf" + File.separator + "trainee-log4j.xml");
-        args.add("-cp");
+        args.add("-classpath");
         File workoutJarDir = coach.getWorkoutJarDir();
         if (workoutJarDir.exists()) {
-            args.add(classpath + ":" + new File(coach.getWorkoutJarDir(), "*").getAbsolutePath());
+            String s = classpath + classpathSperator + new File(coach.getWorkoutJarDir(), "*").getAbsolutePath();
+            log.log(Level.INFO, "classpath:"+s);
+            args.add(s);
         } else {
             args.add(classpath);
         }

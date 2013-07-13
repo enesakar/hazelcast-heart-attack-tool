@@ -9,6 +9,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import static java.lang.String.format;
+
 public final class Utils {
 
     public static String getVersion() {
@@ -78,6 +80,7 @@ public final class Utils {
     }
 
     public static void unzip(byte[] content, final File destinationDir) throws IOException {
+
         byte[] buffer = new byte[1024];
 
         ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(content));
@@ -100,8 +103,8 @@ public final class Utils {
                 int len;
                 while ((len = zis.read(buffer)) > 0) {
                     fos.write(buffer, 0, len);
-                    fos.close();
                 }
+                fos.close();
             }
 
             zipEntry = zis.getNextEntry();
