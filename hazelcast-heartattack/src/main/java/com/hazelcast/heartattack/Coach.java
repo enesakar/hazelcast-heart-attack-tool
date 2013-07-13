@@ -4,7 +4,6 @@ import com.hazelcast.client.GenericError;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
-import com.hazelcast.heartattack.tasks.*;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import joptsimple.OptionException;
@@ -15,8 +14,11 @@ import joptsimple.OptionSpec;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
 
 import static com.hazelcast.heartattack.Utils.*;
@@ -35,10 +37,15 @@ public class Coach {
     private File coachHzFile;
     private volatile HazelcastInstance coachHz;
     private volatile ITopic statusTopic;
-    private volatile Exercise exercise;
+    private volatile Workout workout;
+    private volatile ExerciseRecipe exerciseRecipe;
     private List<HeartAttack> heartAttacks = Collections.synchronizedList(new LinkedList<HeartAttack>());
     private IExecutorService coachExecutor;
     private TraineeJvmManager traineeJvmManager;
+
+    public Workout getWorkout() {
+        return workout;
+    }
 
     public ITopic getStatusTopic() {
         return statusTopic;
@@ -52,12 +59,12 @@ public class Coach {
         return coachHz;
     }
 
-    public Exercise getExercise() {
-        return exercise;
+    public ExerciseRecipe getExerciseRecipe() {
+        return exerciseRecipe;
     }
 
-    public void setExercise(Exercise exercise) {
-        this.exercise = exercise;
+    public void setExerciseRecipe(ExerciseRecipe exerciseRecipe) {
+        this.exerciseRecipe = exerciseRecipe;
     }
 
     public void setCoachHzFile(File coachHzFile) {
@@ -72,7 +79,7 @@ public class Coach {
         return coachHzFile;
     }
 
-    public void terminateWorkout(){
+    public void terminateWorkout() {
         log.log(Level.INFO, "Terminating workout");
         getTraineeJvmManager().destroyAll();
         log.log(Level.INFO, "Finished terminating workout");
@@ -150,7 +157,7 @@ public class Coach {
                         coachHz.getCluster().getLocalMember().getInetSocketAddress(),
                         traineeJvm.getMember().getInetSocketAddress(),
                         traineeJvm.getId(),
-                        exercise,
+                        exerciseRecipe,
                         e);
                 heartAttack(heartAttack);
             }
@@ -195,5 +202,18 @@ public class Coach {
         } catch (OptionException e) {
             exitWithError(e.getMessage() + "\nUse --help to get overview of the help options.");
         }
+    }
+
+    public File getWorkoutJarDir() {
+        File junkDir = new File(getHeartAttackHome(), "junk");
+        return new File(junkDir, workout.getId());
+    }
+
+    public void initWorkout(Workout workout, byte[] content) throws IOException {
+        this.workout = workout;
+        File junkDir = new File(getHeartAttackHome(), "junk");
+        File destinationDir = new File(junkDir, workout.getId());
+        if (content != null)
+            Utils.unzip(content, destinationDir);
     }
 }

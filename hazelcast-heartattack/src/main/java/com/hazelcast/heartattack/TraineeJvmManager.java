@@ -115,7 +115,13 @@ public class TraineeJvmManager {
         args.add("-DtraineeId=" + traineeId);
         args.add("-Dlog4j.configuration=file:" + heartAttackHome + File.separator + "conf" + File.separator + "trainee-log4j.xml");
         args.add("-cp");
-        args.add(classpath);
+        File workoutJarDir = coach.getWorkoutJarDir();
+        if (workoutJarDir.exists()) {
+            args.add(classpath + ":" + new File(coach.getWorkoutJarDir(), "*").getAbsolutePath());
+        } else {
+            args.add(classpath);
+        }
+
         args.addAll(Arrays.asList(clientVmOptionsArray));
         args.add(Trainee.class.getName());
         args.add(traineeId);

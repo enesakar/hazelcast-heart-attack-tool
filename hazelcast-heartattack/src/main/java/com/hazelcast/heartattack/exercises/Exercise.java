@@ -1,8 +1,8 @@
-package com.hazelcast.heartattack;
+package com.hazelcast.heartattack.exercises;
 
 
 /**
- * The ExerciseInstance is the 'thing' that contains the actual logic we want to run. See {@link Exercise} for more
+ * The ExerciseInstance is the 'thing' that contains the actual logic we want to run.
  * information.
  * <p/>
  * Order of lifecycle methods:
@@ -17,7 +17,7 @@ package com.hazelcast.heartattack;
  * <li>{@link #localTearDown()}</li>
  * </ol>
  */
-public interface ExerciseInstance {
+public interface Exercise {
 
     public static final String EXERCISE_INSTANCE = "exerciseInstance";
 

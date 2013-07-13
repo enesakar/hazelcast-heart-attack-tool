@@ -3,15 +3,22 @@ package com.hazelcast.heartattack;
 import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.UUID;
 
 public class Workout implements Serializable{
 
     private static final long serialVersionUID = 1;
 
-    private List<Exercise> exerciseList = new LinkedList<Exercise>();
+    private final String id = UUID.randomUUID().toString();
+
+    private List<ExerciseRecipe> exerciseRecipeList = new LinkedList<ExerciseRecipe>();
     private int duration;
     private TraineeSettings traineeSettings;
     private boolean failFast;
+
+    public String getId() {
+        return id;
+    }
 
     public boolean isFailFast() {
         return failFast;
@@ -37,22 +44,26 @@ public class Workout implements Serializable{
         this.duration = duration;
     }
 
-    public void addExercise(Exercise exercise) {
-        exerciseList.add(exercise);
+    public void addExercise(ExerciseRecipe exerciseRecipe) {
+        exerciseRecipeList.add(exerciseRecipe);
     }
 
-    public List<Exercise> getExerciseList() {
-        return exerciseList;
+    public List<ExerciseRecipe> getExerciseRecipeList() {
+        return exerciseRecipeList;
     }
 
     public int size() {
-        return exerciseList.size();
+        return exerciseRecipeList.size();
     }
 
     @Override
     public String toString() {
         return "Workout{" +
-                "exerciseList=" + exerciseList +
+                "duration=" + duration +
+                ", id='" + id + '\'' +
+                ", exerciseList=" + exerciseRecipeList +
+                ", traineeSettings=" + traineeSettings +
+                ", failFast=" + failFast +
                 '}';
     }
 }

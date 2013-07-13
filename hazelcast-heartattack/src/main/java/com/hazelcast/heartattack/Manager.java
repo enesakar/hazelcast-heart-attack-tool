@@ -1,9 +1,5 @@
 package com.hazelcast.heartattack;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.hazelcast.client.GenericError;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
@@ -21,6 +17,7 @@ import joptsimple.OptionSpec;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
@@ -39,18 +36,25 @@ public class Manager {
     private IExecutorService coachExecutor;
     private HazelcastInstance client;
     private ITopic statusTopic;
-    private volatile Exercise exercise;
+    private volatile ExerciseRecipe exerciseRecipe;
+    private File traineeClassPath;
 
     public void setWorkout(Workout workout) {
         this.workout = workout;
     }
 
-    public Exercise getExercise() {
-        return exercise;
+    public ExerciseRecipe getExerciseRecipe() {
+        return exerciseRecipe;
     }
 
     private void run() throws Exception {
         initClient();
+
+        byte[] bytes = null;
+        if (traineeClassPath != null) {
+            bytes = Utils.zip(traineeClassPath);
+        }
+        coachExecutor.submit(new InitWorkout(workout, bytes)).get();
 
         TraineeSettings traineeSettings = workout.getTraineeSettings();
         Set<Member> members = client.getCluster().getMembers();
@@ -119,8 +123,8 @@ public class Manager {
         stopTrainees();
         startTrainees(workout.getTraineeSettings());
 
-        for (Exercise exercise : workout.getExerciseList()) {
-            boolean success = run(workout, exercise);
+        for (ExerciseRecipe exerciseRecipe : workout.getExerciseRecipeList()) {
+            boolean success = run(workout, exerciseRecipe);
             if (!success && workout.isFailFast()) {
                 log.log(Level.INFO, "Aborting working due to failure");
                 break;
@@ -135,15 +139,15 @@ public class Manager {
         stopTrainees();
     }
 
-    private boolean run(Workout workout, Exercise exercise) {
-        this.exercise = exercise;
+    private boolean run(Workout workout, ExerciseRecipe exerciseRecipe) {
+        this.exerciseRecipe = exerciseRecipe;
         int oldCount = heartAttackList.size();
         try {
-            sendStatusUpdate(exercise.getDescription());
+            sendStatusUpdate(exerciseRecipe.toString());
 
             sendStatusUpdate("Exercise initializing");
-            submitToAllAndWait(coachExecutor, new PrepareCoachForExercise(exercise));
-            shoutAndWait(new InitExercise(exercise));
+            submitToAllAndWait(coachExecutor, new PrepareCoachForExercise(exerciseRecipe));
+            shoutAndWait(new InitExercise(exerciseRecipe));
 
             sendStatusUpdate("Exercise global setup");
             submitToOneTrainee(new GenericExerciseTask("globalSetup"));
@@ -225,7 +229,7 @@ public class Manager {
                 throw new ExecutionException(error.getMessage() + ": details:" + error.getDetails(), null);
             }
         } catch (ExecutionException e) {
-            statusTopic.publish(new HeartAttack(null, null, null, null, getExercise(), e));
+            statusTopic.publish(new HeartAttack(null, null, null, null, getExerciseRecipe(), e));
             throw e;
         }
     }
@@ -248,10 +252,10 @@ public class Manager {
                     throw new ExecutionException(error.getMessage() + ": details:" + error.getDetails(), null);
                 }
             } catch (TimeoutException e) {
-                statusTopic.publish(new HeartAttack(null, null, null, null, getExercise(), e));
+                statusTopic.publish(new HeartAttack(null, null, null, null, getExerciseRecipe(), e));
                 throw new RuntimeException(e);
             } catch (ExecutionException e) {
-                statusTopic.publish(new HeartAttack(null, null, null, null, getExercise(), e));
+                statusTopic.publish(new HeartAttack(null, null, null, null, getExerciseRecipe(), e));
                 throw e;
             }
         }
@@ -277,8 +281,11 @@ public class Manager {
         OptionSpec<Integer> durationSpec = parser.accepts("duration", "Number of seconds to run per workout)")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(60);
         OptionSpec traineeTrackLoggingSpec = parser.accepts("traineeTrackLogging", "If the coach is tracking trainee logging");
-         OptionSpec<Integer> traineeCountSpec = parser.accepts("traineeVmCount", "Number of trainee VM's per coach")
+        OptionSpec<Integer> traineeCountSpec = parser.accepts("traineeVmCount", "Number of trainee VM's per coach")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(1);
+        OptionSpec<String> traineeClassPathSpec = parser.accepts("traineeClassPath", "A directory containing the jars that are going to be uploaded to the coaches")
+                .withRequiredArg().ofType(String.class);
+
         OptionSpec<Integer> traineeStartupTimeoutSpec = parser.accepts("traineeStartupTimeout", "The startup timeout in seconds for a trainee")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(60);
         OptionSpec<Boolean> traineeRefreshSpec = parser.accepts("traineeFresh", "If the trainee VM's should be replaced after every workout")
@@ -305,13 +312,21 @@ public class Manager {
                 System.exit(0);
             }
 
+            if (options.has(traineeClassPathSpec)) {
+                File traineeClassPath = new File(options.valueOf(traineeClassPathSpec));
+                if (!traineeClassPath.exists()) {
+                    exitWithError(format("traineeClassPath [%s] doesn't exist.\n", traineeClassPath));
+                }
+                manager.setTraineeClassPath(traineeClassPath);
+            }
+
             File coachHzFile = new File(options.valueOf(coachHzFileSpec));
             if (!coachHzFile.exists()) {
                 exitWithError(format("Coach Hazelcast config file [%s] does not exist.\n", coachHzFile));
             }
             manager.coachHzFile = coachHzFile;
 
-            String workoutFileName = "workout.json";
+            String workoutFileName = "workout.properties";
             List<String> workoutFiles = options.nonOptionArguments();
             if (workoutFiles.size() == 1) {
                 workoutFileName = workoutFiles.get(0);
@@ -352,20 +367,66 @@ public class Manager {
     }
 
 
-    // http://programmerbruce.blogspot.com/2011/05/deserialize-json-with-jackson-into.html
     private static Workout createWorkout(File file) throws Exception {
-        JsonFactory jsonFactory = new JsonFactory();
-        ObjectMapper mapper = new ObjectMapper(jsonFactory);
+        Properties properties = loadProperties(file);
 
-        JsonParser parser = jsonFactory.createParser(file);
-        mapper.enableDefaultTyping();
-        mapper.enableDefaultTyping(ObjectMapper.DefaultTyping.NON_FINAL);
+        Map<String, ExerciseRecipe> recipies = new HashMap<String, ExerciseRecipe>();
+        for (String property : properties.stringPropertyNames()) {
+            String value = (String) properties.get(property);
+            int indexOfDot = property.indexOf(".");
 
-        Collection<Exercise> exercises = mapper.readValue(parser, new TypeReference<Collection<Exercise>>() {
-        });
+            String recipeId = "";
+            String field = property;
+            if (indexOfDot > -1) {
+                recipeId = property.substring(0, indexOfDot);
+                field = property.substring(indexOfDot + 1);
+            }
+
+            ExerciseRecipe recipe = recipies.get(recipeId);
+            if (recipe == null) {
+                recipe = new ExerciseRecipe();
+                recipies.put(recipeId, recipe);
+            }
+
+            recipe.setProperty(field, value);
+        }
 
         Workout workout = new Workout();
-        workout.getExerciseList().addAll(exercises);
+        for (Map.Entry<String, ExerciseRecipe> entry : recipies.entrySet()) {
+            ExerciseRecipe recipe = entry.getValue();
+            String recipeId = entry.getKey();
+            if (recipe.getClassname() == null) {
+                if ("".equals(recipeId)) {
+                    throw new RuntimeException(format("There is no class set for the in property file [%s]." +
+                            "Add class=YourExerciseClass",
+                            file.getAbsolutePath()));
+                } else {
+                    throw new RuntimeException(format("There is no class set for exercise [%s] in property file [%s]." +
+                            "Add %s.class=YourExerciseClass",
+                            recipeId, file.getAbsolutePath(), recipeId));
+                }
+            }
+            workout.addExercise(recipe);
+        }
         return workout;
+    }
+
+    private static Properties loadProperties(File file) throws IOException {
+        Properties properties = new Properties();
+        final FileInputStream in = new FileInputStream(file);
+        try {
+            properties.load(in);
+            return properties;
+        } finally {
+            Utils.closeQuietly(in);
+        }
+    }
+
+    public void setTraineeClassPath(File traineeClassPath) {
+        this.traineeClassPath = traineeClassPath;
+    }
+
+    public File getTraineeClassPath() {
+        return traineeClassPath;
     }
 }

@@ -20,13 +20,13 @@
 
 
     <properties>
-        <jackson-version>2.2.0</jackson-version>
         <java.version>1.6</java.version>
     </properties>
 
     <modules>
         <module>hazelcast-heartattack</module>
         <module>hazelcast-heartattack-dist</module>
+        <module>extra-exercises</module>
     </modules>
 
     <build>

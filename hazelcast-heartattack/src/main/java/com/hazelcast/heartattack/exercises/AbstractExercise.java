@@ -1,6 +1,7 @@
-package com.hazelcast.heartattack;
+package com.hazelcast.heartattack.exercises;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.heartattack.Utils;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -9,16 +10,24 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Level;
 
-public abstract class AbstractExerciseInstance<E extends Exercise> implements ExerciseInstance {
+public abstract class AbstractExercise implements Exercise {
 
-    final static ILogger log = Logger.getLogger(AbstractExerciseInstance.class.getName());
+    final static ILogger log = Logger.getLogger(AbstractExercise.class.getName());
 
     protected HazelcastInstance hazelcastInstance;
-    protected E exercise;
 
+    protected String exerciseId;
     protected volatile boolean stop = false;
     private final CountDownLatch startLatch = new CountDownLatch(1);
     private final Set<Thread> threads = new HashSet<Thread>();
+
+    public String getExerciseId() {
+        return exerciseId;
+    }
+
+    public void setExerciseId(String exerciseId) {
+        this.exerciseId = exerciseId;
+    }
 
     public HazelcastInstance getHazelcastInstance() {
         return hazelcastInstance;
@@ -26,14 +35,6 @@ public abstract class AbstractExerciseInstance<E extends Exercise> implements Ex
 
     public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
-    }
-
-    public E getExercise() {
-        return exercise;
-    }
-
-    public void setExercise(E exercise) {
-        this.exercise = exercise;
     }
 
     @Override

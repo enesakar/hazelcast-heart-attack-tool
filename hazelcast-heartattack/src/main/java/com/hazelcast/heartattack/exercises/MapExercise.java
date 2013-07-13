@@ -1,8 +1,22 @@
 package com.hazelcast.heartattack.exercises;
 
-import com.hazelcast.heartattack.AbstractExercise;
+import com.hazelcast.core.IMap;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
+import java.util.Random;
+import java.util.logging.Level;
 
 public class MapExercise extends AbstractExercise {
+
+    private final static ILogger log = Logger.getLogger(MapExercise.class);
+
+    private final static String alphabet = "abcdefghijklmnopqrstuvwxyz1234567890";
+
+    private IMap<Object, Object> map;
+    private String[] keys;
+    private String[] values;
+    private Random random = new Random();
 
     public int threadCount = 10;
 
@@ -14,47 +28,55 @@ public class MapExercise extends AbstractExercise {
 
     private int valueCount = 10000;
 
-    public MapExercise() {
-        super(MapExerciseInstance.class);
+    @Override
+    public void localSetup() throws Exception {
+        map = hazelcastInstance.getMap(exerciseId + ":Map");
+        for (int k = 0; k < threadCount; k++) {
+            spawn(new Worker());
+        }
+
+        keys = new String[keyCount];
+        for (int k = 0; k < keys.length; k++) {
+            keys[k] = makeString(keyLength);
+        }
+
+        values = new String[valueCount];
+        for (int k = 0; k < values.length; k++) {
+            values[k] = makeString(valueLength);
+        }
     }
 
-    public int getKeyCount() {
-        return keyCount;
+    private String makeString(int length) {
+        StringBuilder sb = new StringBuilder();
+        for (int k = 0; k < length; k++) {
+            char c = alphabet.charAt(random.nextInt(alphabet.length()));
+            sb.append(c);
+        }
+
+        return sb.toString();
     }
 
-    public void setKeyCount(int keyCount) {
-        this.keyCount = keyCount;
+    @Override
+    public void globalTearDown() throws Exception {
+        map.destroy();
     }
 
-    public int getValueCount() {
-        return valueCount;
-    }
+    private class Worker implements Runnable {
+        private final Random random = new Random();
 
-    public void setValueCount(int valueCount) {
-        this.valueCount = valueCount;
-    }
-
-    public int getKeyLength() {
-        return keyLength;
-    }
-
-    public void setKeyLength(int keyLength) {
-        this.keyLength = keyLength;
-    }
-
-    public int getThreadCount() {
-        return threadCount;
-    }
-
-    public void setThreadCount(int threadCount) {
-        this.threadCount = threadCount;
-    }
-
-    public int getValueLength() {
-        return valueLength;
-    }
-
-    public void setValueLength(int valueLength) {
-        this.valueLength = valueLength;
+        @Override
+        public void run() {
+            long iteration = 0;
+            while (!stop) {
+                map.put(System.nanoTime(), System.nanoTime());
+                Object key = keys[random.nextInt(keys.length)];
+                Object value = values[random.nextInt(values.length)];
+                map.put(key, value);
+                if (iteration % 10000 == 0) {
+                    log.log(Level.INFO, Thread.currentThread().getName() + " At iteration: " + iteration);
+                }
+                iteration++;
+            }
+        }
     }
 }

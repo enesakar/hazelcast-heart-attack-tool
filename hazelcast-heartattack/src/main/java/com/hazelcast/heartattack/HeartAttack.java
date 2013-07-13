@@ -15,25 +15,25 @@ public class HeartAttack implements Serializable {
     private final InetSocketAddress traineeAddress;
     private final String traineeId;
     private final Date time;
-    private final Exercise exercise;
+    private final ExerciseRecipe exerciseRecipe;
     private final Throwable cause;
 
-    public HeartAttack(String message, InetSocketAddress coachAddress, InetSocketAddress traineeAddress, String traineeId, Exercise exercise) {
+    public HeartAttack(String message, InetSocketAddress coachAddress, InetSocketAddress traineeAddress, String traineeId, ExerciseRecipe exerciseRecipe) {
         this.message = message;
         this.coachAddress = coachAddress;
         this.traineeId = traineeId;
         this.time = new Date();
-        this.exercise = exercise;
+        this.exerciseRecipe = exerciseRecipe;
         this.traineeAddress = traineeAddress;
         this.cause = null;
     }
 
-    public HeartAttack(String message, InetSocketAddress coachAddress, InetSocketAddress traineeAddress, String traineeId, Exercise exercise, Throwable cause) {
+    public HeartAttack(String message, InetSocketAddress coachAddress, InetSocketAddress traineeAddress, String traineeId, ExerciseRecipe exerciseRecipe, Throwable cause) {
         this.message = message;
         this.coachAddress = coachAddress;
         this.traineeId = traineeId;
         this.time = new Date();
-        this.exercise = exercise;
+        this.exerciseRecipe = exerciseRecipe;
         this.traineeAddress = traineeAddress;
         this.cause = cause;
     }
@@ -58,8 +58,8 @@ public class HeartAttack implements Serializable {
         return time;
     }
 
-    public Exercise getExercise() {
-        return exercise;
+    public ExerciseRecipe getExerciseRecipe() {
+        return exerciseRecipe;
     }
 
     public InetSocketAddress getTraineeAddress() {
@@ -76,13 +76,13 @@ public class HeartAttack implements Serializable {
         sb.append("   time=").append(time).append("\n");
         sb.append("   traineeAddress=").append(traineeAddress).append("\n");
         sb.append("   traineeId=").append(traineeId).append("\n");
-        if (exercise != null) {
-            String[] exerciseString = exercise.toString().split("\n");
+        if (exerciseRecipe != null) {
+            String[] exerciseString = exerciseRecipe.toString().split("\n");
             sb.append("   exercise=").append(exerciseString[0]).append("\n");
             for (int k = 1; k < exerciseString.length; k++) {
                 sb.append("    ").append(exerciseString[k]).append("\n");
             }
-        }else{
+        } else {
             sb.append("   exercise=").append("null").append("\n");
         }
 

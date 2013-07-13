@@ -1,30 +1,31 @@
-package com.hazelcast.heartattack.exercises;
-
+package com;
 
 import com.hazelcast.core.IAtomicLong;
-import com.hazelcast.heartattack.AbstractExerciseInstance;
+import com.hazelcast.heartattack.exercises.AbstractExercise;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.util.Random;
 import java.util.logging.Level;
 
-public class AtomicLongExerciseInstance extends AbstractExerciseInstance<AtomicLongExercise> {
+public class AtomicLongExercise extends AbstractExercise {
 
-    private final static ILogger log = Logger.getLogger(AtomicLongExerciseInstance.class);
+    private final static ILogger log = Logger.getLogger(AtomicLongExercise.class);
 
     private IAtomicLong totalCounter;
     private IAtomicLong[] counters;
+    private int countersLength = 1000;
+    private int threadCount = 1;
 
     @Override
     public void localSetup() {
-        totalCounter = hazelcastInstance.getAtomicLong(getExercise().getId() + ":TotalCounter");
-        counters = new IAtomicLong[exercise.getCountersLength()];
+        totalCounter = hazelcastInstance.getAtomicLong(getExerciseId() + ":TotalCounter");
+        counters = new IAtomicLong[countersLength];
         for (int k = 0; k < counters.length; k++) {
-            counters[k] = hazelcastInstance.getAtomicLong(getExercise().getId() + ":Counter-" + k);
+            counters[k] = hazelcastInstance.getAtomicLong(exerciseId + ":Counter-" + k);
         }
 
-        for (int k = 0; k < exercise.getThreadCount(); k++) {
+        for (int k = 0; k < threadCount; k++) {
             spawn(new Worker());
         }
     }

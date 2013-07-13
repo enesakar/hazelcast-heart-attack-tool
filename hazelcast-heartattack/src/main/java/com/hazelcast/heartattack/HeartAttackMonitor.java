@@ -53,7 +53,7 @@ public class HeartAttackMonitor implements Runnable {
                     coach.getCoachHz().getCluster().getLocalMember().getInetSocketAddress(),
                     jvm.getMember().getInetSocketAddress(),
                     jvm.getId(),
-                    coach.getExercise());
+                    coach.getExerciseRecipe());
         }
 
         return null;
@@ -82,7 +82,7 @@ public class HeartAttackMonitor implements Runnable {
                 coach.getCoachHz().getCluster().getLocalMember().getInetSocketAddress(),
                 jvm.getMember().getInetSocketAddress(),
                 jvm.getId(),
-                coach.getExercise());
+                coach.getExerciseRecipe());
         jvm.getProcess().destroy();
         return heartAttack;
     }
@@ -96,7 +96,7 @@ public class HeartAttackMonitor implements Runnable {
                         coach.getCoachHz().getCluster().getLocalMember().getInetSocketAddress(),
                         jvm.getMember().getInetSocketAddress(),
                         jvm.getId(),
-                        coach.getExercise());
+                        coach.getExerciseRecipe());
             }
         } catch (IllegalThreadStateException ignore) {
         }

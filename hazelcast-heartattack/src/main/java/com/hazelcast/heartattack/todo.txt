@@ -24,6 +24,25 @@ of information missing).
 - the manager should have more advanced configuration to connect to the coach cluster, currently it needs to be on the
 same host.
 
+- the trainee logs should be written in the trainee subdir for that specific workout
+
+- copying of jars causes problem
+
+- traineeclasspath should not be only a dir, but also be a listing of jars/directories
+
+- the exerciserecipe should have a multiline tostring for prettier logging
+
+
+DONE
+
+- replace the shitty json binding by properties
+
+- the properties of the exerciserecipe need to be bound on the exercise
+
+- rename exerciseinstance to exercise and exercise to exerciserecipe
+
+- remove the 'exercisejunk' class. Bind directly on the ExerciseInstance
+
 NICE TO HAVE
 
 - coaches need to write to unique filename so that multiple coaches can run in parallel (for testing).
@@ -47,100 +66,3 @@ with 10m or 2h.
     - Start the next workout.
 
 - when response times for workers are too big: heart attack
-
-DONE
-
-- the manager needs to show time
-
-- sending 'echo's should be done using a topic, not an executor. So the manager can participate as well
-
-- the addresspicker issue that prevent creating large number of trainee vm's
-
-- rename headcoach/assistentcoach.Probably assistent coach to coach and headcoach to manager
-
-- the heart attacks should be published on a topic
-
-- each coach needs to listen to the heart attack topic
-
-- the 'headcoach' should only do coordination, not actual running
-
-- trainee startup timeout should be configurable
-
-- when a coach terminates, it should terminate the clients.
-
-- when a heart attack happens, all coaches should see it.
-
-- better location to store the heartattack files
-
-- a heart attack should be connected to a particular exercise
-
-- removal of the waiting mechanism; not needed.
-
-- assistent coaches can't be reused at the moment.
-
-- when a worker encounters an error, it should also produce a heart attack file.
-
-- when a workout starts, the coaches should be cleaned first.
-
-- option to fail immediately when a workout fails
-
-- when a trainee process exits abnormally, a heart attack should happen
-
-- setting to create a trainees per work out or to reuse them
-
-- heart attack indicator; when a worker thread throws an exception, it should be posted on a central topic
-that will be listened to by the master
-
-- version needs to be logged by head coach
-
-- version needs to be logged by assistant coach
-
-- the content of the exercise is now printed.
-
-- trainee needs to log into log dir.
-
-- configuration of hazelcast.xml file for trainee client
-
-- configuration of hazelcast.xml file for trainee
-
-- changed the logging so it relies on hazelcast logging.
-
-- when an exercise fails, it needs to be correctly cleaned (also the trainees need to be killed no matter what)
-
-- problem; because the coach also starts a trainee-hz, it will participate as trainee. This is no good.
-So instead of having a trainee hz on each coach, probably better to have a coach instance on each trainee.
-
-- configuration of hazelcast.xml file for coach
-
-- option to see the trainee logging within the coach
-
-- trainee vm's need to write to a unique logfile (probably give them a different working directory)
-
-- log configuration for trainee needs to be pulled out.
-
-- log configuration for coach needs to be pulled out.
-
-- a distribution of the heart attack tool
-
-- loading workout: the file should be configurable
-
-- loading workout: only mapworkout currently can be loaded.
-
-- ability to configure the workouts. Currently it is hard coded.
-
-- currently we can only do a single workout, but it should be possible to run a whole bunch of workouts.
-
-- the number of machines started before running a workout is hard coded
-
-- should be easy to split up the tearDown in 2 phases, one is a master setup and the other one is a shared setup.
-
-- should be easy to split up the setup in 2 phases, one is a master setup and the other one is a shared setup.
-
-- membercount/memberindex needs to be removed because we want to have a dynamic number of members
-
-- be able to launch virtual machines from a coach
-
-- the loggingthread needs to be cleaned up because it will never be ending.
-
-- make use of a logging framework
-

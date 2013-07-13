@@ -2,9 +2,7 @@ package com.hazelcast.heartattack.tasks;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
-import com.hazelcast.heartattack.Coach;
-import com.hazelcast.heartattack.ExerciseInstance;
-import com.hazelcast.heartattack.HeartAttack;
+import com.hazelcast.heartattack.exercises.Exercise;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -31,13 +29,13 @@ public class GenericExerciseTask implements Callable, Serializable, HazelcastIns
         try {
             log.log(Level.INFO, "Calling exerciseInstance." + methodName + "()");
 
-            ExerciseInstance exerciseInstance = (ExerciseInstance) hz.getUserContext().get(ExerciseInstance.EXERCISE_INSTANCE);
-            if (exerciseInstance == null) {
+            Exercise exercise = (Exercise) hz.getUserContext().get(Exercise.EXERCISE_INSTANCE);
+            if (exercise == null) {
                 throw new IllegalStateException("No ExerciseInstance found for method "+methodName+"()");
             }
 
-            Method method = exerciseInstance.getClass().getMethod(methodName);
-            method.invoke(exerciseInstance);
+            Method method = exercise.getClass().getMethod(methodName);
+            method.invoke(exercise);
             log.log(Level.INFO, "Finished calling exerciseInstance." + methodName + "()");
             return null;
         } catch (Exception e) {
