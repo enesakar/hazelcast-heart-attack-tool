@@ -370,7 +370,7 @@ public class Manager {
     private static Workout createWorkout(File file) throws Exception {
         Properties properties = loadProperties(file);
 
-        Map<String, ExerciseRecipe> recipies = new HashMap<String, ExerciseRecipe>();
+        LinkedHashMap<String, ExerciseRecipe> recipies = new LinkedHashMap<String, ExerciseRecipe>();
         for (String property : properties.stringPropertyNames()) {
             String value = (String) properties.get(property);
             int indexOfDot = property.indexOf(".");

@@ -30,10 +30,11 @@ same host.
 
 - traineeclasspath should not be only a dir, but also be a listing of jars/directories
 
-- the exerciserecipe should have a multiline tostring for prettier logging
-
+- when exercise fails to start correctly, the system keeps running and causing exception
 
 DONE
+
+- the exerciserecipe should have a multiline tostring for prettier logging
 
 - replace the shitty json binding by properties
 
