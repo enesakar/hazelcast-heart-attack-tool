@@ -3,7 +3,7 @@ package com.hazelcast.heartattack.tasks;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.heartattack.Coach;
-import com.hazelcast.heartattack.TraineeSettings;
+import com.hazelcast.heartattack.TraineeVmSettings;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -17,9 +17,9 @@ public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceA
     private final static ILogger log = Logger.getLogger(SpawnTrainees.class);
 
     private transient HazelcastInstance hz;
-    private final TraineeSettings settings;
+    private final TraineeVmSettings settings;
 
-    public SpawnTrainees(TraineeSettings settings) {
+    public SpawnTrainees(TraineeVmSettings settings) {
         this.settings = settings;
     }
 
@@ -29,7 +29,7 @@ public class SpawnTrainees implements Callable, Serializable, HazelcastInstanceA
 
         try {
             Coach coach = (Coach) hz.getUserContext().get(Coach.KEY_COACH);
-            coach.getTraineeJvmManager().spawn(settings);
+            coach.getTraineeVmManager().spawn(settings);
             return null;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed to spawn Trainee Virtual Machines", e);

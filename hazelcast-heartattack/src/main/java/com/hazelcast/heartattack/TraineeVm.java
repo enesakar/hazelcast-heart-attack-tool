@@ -4,12 +4,12 @@ import com.hazelcast.core.Member;
 
 import java.net.InetSocketAddress;
 
-public class TraineeJvm {
+public class TraineeVm {
     private final Process process;
     private final String id;
     private volatile Member member;
 
-    public TraineeJvm(String id, Process process) {
+    public TraineeVm(String id, Process process) {
         this.id = id;
         this.process = process;
     }

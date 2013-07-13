@@ -16,7 +16,6 @@ public class Trainee {
 
     final static ILogger log = Logger.getLogger(Trainee.class.getName());
 
-
     public static final String TRAINEE_PARTICIPANT_MAP = "Trainee:ParticipantMap";
     public static final String TRAINEE_EXECUTOR = "Trainee:Executor";
 

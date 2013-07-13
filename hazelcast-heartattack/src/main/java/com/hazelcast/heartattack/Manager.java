@@ -56,12 +56,12 @@ public class Manager {
         }
         coachExecutor.submit(new InitWorkout(workout, bytes)).get();
 
-        TraineeSettings traineeSettings = workout.getTraineeSettings();
+        TraineeVmSettings traineeVmSettings = workout.getTraineeVmSettings();
         Set<Member> members = client.getCluster().getMembers();
-        log.log(Level.INFO, format("Trainee track logging: %s", traineeSettings.isTrackLogging()));
-        log.log(Level.INFO, format("Trainee's per coach: %s", traineeSettings.getTraineeCount()));
+        log.log(Level.INFO, format("Trainee track logging: %s", traineeVmSettings.isTrackLogging()));
+        log.log(Level.INFO, format("Trainee's per coach: %s", traineeVmSettings.getTraineeCount()));
         log.log(Level.INFO, format("Total number of coaches: %s", members.size()));
-        log.log(Level.INFO, format("Total number of trainees: %s", members.size() * traineeSettings.getTraineeCount()));
+        log.log(Level.INFO, format("Total number of trainees: %s", members.size() * traineeVmSettings.getTraineeCount()));
 
         ITopic heartAttackTopic = client.getTopic(Coach.COACH_HEART_ATTACK_TOPIC);
         heartAttackTopic.addMessageListener(new MessageListener() {
@@ -116,13 +116,13 @@ public class Manager {
     private void runWorkout(Workout workout) throws Exception {
         sendStatusUpdate(format("Starting workout: %s", workout.getId()));
         sendStatusUpdate(format("Exercises in workout: %s", workout.size()));
-        sendStatusUpdate( format("Running time per exercise: %s seconds", workout.getDuration()));
-        sendStatusUpdate( format("Expected total workout time: %s seconds", workout.size() * workout.getDuration()));
+        sendStatusUpdate(format("Running time per exercise: %s seconds", workout.getDuration()));
+        sendStatusUpdate(format("Expected total workout time: %s seconds", workout.size() * workout.getDuration()));
 
         //we need to make sure that before we start, there are no trainees running anymore.
         //log.log(Level.INFO, "Ensuring trainee all killed");
         stopTrainees();
-        startTrainees(workout.getTraineeSettings());
+        startTrainees(workout.getTraineeVmSettings());
 
         for (ExerciseRecipe exerciseRecipe : workout.getExerciseRecipeList()) {
             boolean success = run(workout, exerciseRecipe);
@@ -131,9 +131,9 @@ public class Manager {
                 break;
             }
 
-            if (!success || workout.getTraineeSettings().isRefreshJvm()) {
+            if (!success || workout.getTraineeVmSettings().isRefreshJvm()) {
                 stopTrainees();
-                startTrainees(workout.getTraineeSettings());
+                startTrainees(workout.getTraineeVmSettings());
             }
         }
 
@@ -204,12 +204,12 @@ public class Manager {
         sendStatusUpdate("All remaining trainees have been terminated");
     }
 
-    private long startTrainees(TraineeSettings traineeSettings) throws Exception {
+    private long startTrainees(TraineeVmSettings traineeVmSettings) throws Exception {
         long startMs = System.currentTimeMillis();
-        final int traineeCount = traineeSettings.getTraineeCount();
+        final int traineeCount = traineeVmSettings.getTraineeCount();
         final int totalTraineeCount = traineeCount * client.getCluster().getMembers().size();
         log.log(Level.INFO, format("Starting a grand total of %s Trainee Java Virtual Machines", totalTraineeCount));
-        submitToAllAndWait(coachExecutor, new SpawnTrainees(traineeSettings));
+        submitToAllAndWait(coachExecutor, new SpawnTrainees(traineeVmSettings));
         long durationMs = System.currentTimeMillis() - startMs;
         log.log(Level.INFO, (format("Finished starting a grand total of %s Trainees after %s ms\n", totalTraineeCount, durationMs)));
         return startMs;
@@ -348,14 +348,14 @@ public class Manager {
                 exitWithError(format("Trainee Hazelcast config file [%s] does not exist.\n", traineeHzFile));
             }
 
-            TraineeSettings traineeSettings = new TraineeSettings();
-            traineeSettings.setTrackLogging(options.has(traineeTrackLoggingSpec));
-            traineeSettings.setVmOptions(options.valueOf(traineeVmOptionsSpec));
-            traineeSettings.setTraineeCount(options.valueOf(traineeCountSpec));
-            traineeSettings.setTraineeStartupTimeout(options.valueOf(traineeStartupTimeoutSpec));
-            traineeSettings.setHzConfig(Utils.asText(traineeHzFile));
-            traineeSettings.setRefreshJvm(options.valueOf(traineeRefreshSpec));
-            workout.setTraineeSettings(traineeSettings);
+            TraineeVmSettings traineeVmSettings = new TraineeVmSettings();
+            traineeVmSettings.setTrackLogging(options.has(traineeTrackLoggingSpec));
+            traineeVmSettings.setVmOptions(options.valueOf(traineeVmOptionsSpec));
+            traineeVmSettings.setTraineeCount(options.valueOf(traineeCountSpec));
+            traineeVmSettings.setTraineeStartupTimeout(options.valueOf(traineeStartupTimeoutSpec));
+            traineeVmSettings.setHzConfig(Utils.asText(traineeHzFile));
+            traineeVmSettings.setRefreshJvm(options.valueOf(traineeRefreshSpec));
+            workout.setTraineeVmSettings(traineeVmSettings);
         } catch (OptionException e) {
             Utils.exitWithError(e.getMessage() + ". Use --help to get overview of the help options.");
         }

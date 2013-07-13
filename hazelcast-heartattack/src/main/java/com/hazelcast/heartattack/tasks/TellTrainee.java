@@ -33,7 +33,7 @@ public class TellTrainee implements Callable, Serializable, HazelcastInstanceAwa
     public Object call() throws Exception {
         try {
             Coach coach = (Coach) hz.getUserContext().get(Coach.KEY_COACH);
-            IExecutorService executorr = coach.getTraineeJvmManager().getTraineeExecutor();
+            IExecutorService executorr = coach.getTraineeVmManager().getTraineeExecutor();
             Future future = executorr.submit(task);
             return future.get(timeoutSec, TimeUnit.SECONDS);
         } catch (Exception e) {

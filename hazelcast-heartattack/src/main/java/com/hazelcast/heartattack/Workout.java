@@ -13,7 +13,7 @@ public class Workout implements Serializable{
 
     private List<ExerciseRecipe> exerciseRecipeList = new LinkedList<ExerciseRecipe>();
     private int duration;
-    private TraineeSettings traineeSettings;
+    private TraineeVmSettings traineeVmSettings;
     private boolean failFast;
 
     public String getId() {
@@ -28,12 +28,12 @@ public class Workout implements Serializable{
         this.failFast = failFast;
     }
 
-    public TraineeSettings getTraineeSettings() {
-        return traineeSettings;
+    public TraineeVmSettings getTraineeVmSettings() {
+        return traineeVmSettings;
     }
 
-    public void setTraineeSettings(TraineeSettings traineeSettings) {
-        this.traineeSettings = traineeSettings;
+    public void setTraineeVmSettings(TraineeVmSettings traineeVmSettings) {
+        this.traineeVmSettings = traineeVmSettings;
     }
 
     public int getDuration() {
@@ -62,7 +62,7 @@ public class Workout implements Serializable{
                 "duration=" + duration +
                 ", id='" + id + '\'' +
                 ", exerciseList=" + exerciseRecipeList +
-                ", traineeSettings=" + traineeSettings +
+                ", traineeSettings=" + traineeVmSettings +
                 ", failFast=" + failFast +
                 '}';
     }

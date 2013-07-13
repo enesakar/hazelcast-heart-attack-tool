@@ -41,7 +41,7 @@ public class Coach {
     private volatile ExerciseRecipe exerciseRecipe;
     private List<HeartAttack> heartAttacks = Collections.synchronizedList(new LinkedList<HeartAttack>());
     private IExecutorService coachExecutor;
-    private TraineeJvmManager traineeJvmManager;
+    private TraineeVmManager traineeVmManager;
 
     public Workout getWorkout() {
         return workout;
@@ -51,8 +51,8 @@ public class Coach {
         return statusTopic;
     }
 
-    public TraineeJvmManager getTraineeJvmManager() {
-        return traineeJvmManager;
+    public TraineeVmManager getTraineeVmManager() {
+        return traineeVmManager;
     }
 
     public HazelcastInstance getCoachHazelcastInstance() {
@@ -81,7 +81,7 @@ public class Coach {
 
     public void terminateWorkout() {
         log.log(Level.INFO, "Terminating workout");
-        getTraineeJvmManager().destroyAll();
+        getTraineeVmManager().destroyAll();
         log.log(Level.INFO, "Finished terminating workout");
     }
 
@@ -132,18 +132,18 @@ public class Coach {
     }
 
     public void shoutToTrainees(Callable task) throws InterruptedException {
-        Map<TraineeJvm, Future> futures = new HashMap<TraineeJvm, Future>();
+        Map<TraineeVm, Future> futures = new HashMap<TraineeVm, Future>();
 
-        for (TraineeJvm traineeJvm : getTraineeJvmManager().getTraineeJvms()) {
+        for (TraineeVm traineeJvm : getTraineeVmManager().getTraineeJvms()) {
             Member member = traineeJvm.getMember();
             if (member == null) continue;
 
-            Future future = getTraineeJvmManager().getTraineeExecutor().submitToMember(task, member);
+            Future future = getTraineeVmManager().getTraineeExecutor().submitToMember(task, member);
             futures.put(traineeJvm, future);
         }
 
-        for (Map.Entry<TraineeJvm, Future> entry : futures.entrySet()) {
-            TraineeJvm traineeJvm = entry.getKey();
+        for (Map.Entry<TraineeVm, Future> entry : futures.entrySet()) {
+            TraineeVm traineeJvm = entry.getKey();
             Future future = entry.getValue();
             try {
                 Object o = future.get();
@@ -167,7 +167,7 @@ public class Coach {
     public void start() throws Exception {
         initCoachHazelcastInstance();
 
-        traineeJvmManager = new TraineeJvmManager(this);
+        traineeVmManager = new TraineeVmManager(this);
 
         new Thread(new HeartAttackMonitor(this)).start();
 

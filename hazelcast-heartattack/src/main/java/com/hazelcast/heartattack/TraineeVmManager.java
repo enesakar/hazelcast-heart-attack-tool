@@ -24,9 +24,9 @@ import java.util.logging.Level;
 import static com.hazelcast.heartattack.Utils.getHeartAttackHome;
 import static java.lang.String.format;
 
-public class TraineeJvmManager {
+public class TraineeVmManager {
 
-    final static ILogger log = Logger.getLogger(TraineeJvmManager.class);
+    final static ILogger log = Logger.getLogger(TraineeVmManager.class);
     private final AtomicBoolean javaHomePrinted = new AtomicBoolean();
     public final static File userDir = new File(System.getProperty("user.dir"));
     public final static String classpath = System.getProperty("java.class.path");
@@ -34,17 +34,17 @@ public class TraineeJvmManager {
     public final static File traineesHome = new File(getHeartAttackHome(), "trainees");
     public final static String classpathSperator=System.getProperty("path.separator");
 
-    private final List<TraineeJvm> traineeJvms = new CopyOnWriteArrayList<TraineeJvm>();
+    private final List<TraineeVm> traineeJvms = new CopyOnWriteArrayList<TraineeVm>();
     private final Coach coach;
     private HazelcastInstance traineeClient;
     private IExecutorService traineeExecutor;
 
-    public TraineeJvmManager(Coach coach) {
+    public TraineeVmManager(Coach coach) {
         this.coach = coach;
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
-                for (TraineeJvm jvm : traineeJvms) {
+                for (TraineeVm jvm : traineeJvms) {
                     log.log(Level.INFO, "Destroying trainee : " + jvm.getId());
                     jvm.getProcess().destroy();
                 }
@@ -52,27 +52,27 @@ public class TraineeJvmManager {
         });
     }
 
-    public List<TraineeJvm> getTraineeJvms() {
+    public List<TraineeVm> getTraineeJvms() {
         return traineeJvms;
     }
 
-    public void spawn(TraineeSettings settings) throws Exception {
+    public void spawn(TraineeVmSettings settings) throws Exception {
         log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines using settings %s", settings.getTraineeCount(), settings));
 
         File traineeHzFile = File.createTempFile("trainee-hazelcast", "xml");
         traineeHzFile.deleteOnExit();
         Utils.write(traineeHzFile, settings.getHzConfig());
 
-        List<TraineeJvm> trainees = new LinkedList<TraineeJvm>();
+        List<TraineeVm> trainees = new LinkedList<TraineeVm>();
 
         for (int k = 0; k < settings.getTraineeCount(); k++) {
-            TraineeJvm trainee = startTraineeJvm(settings.getVmOptions(), traineeHzFile);
+            TraineeVm trainee = startTraineeJvm(settings.getVmOptions(), traineeHzFile);
             Process process = trainee.getProcess();
             String traineeId = trainee.getId();
 
             trainees.add(trainee);
 
-            new TraineeLogger(traineeId, process.getInputStream(), settings.isTrackLogging()).start();
+            new TraineeVmLogger(traineeId, process.getInputStream(), settings.isTrackLogging()).start();
         }
         Config config = new XmlConfigBuilder(traineeHzFile.getAbsolutePath()).build();
         ClientConfig clientConfig = new ClientConfig().addAddress("localhost:" + config.getNetworkConfig().getPort());
@@ -82,7 +82,7 @@ public class TraineeJvmManager {
         traineeClient = HazelcastClient.newHazelcastClient(clientConfig);
         traineeExecutor = traineeClient.getExecutorService(Trainee.TRAINEE_EXECUTOR);
 
-        for (TraineeJvm trainee : trainees) {
+        for (TraineeVm trainee : trainees) {
             waitForTraineeStartup(trainee, settings.getTraineeStartupTimeout());
         }
 
@@ -98,7 +98,7 @@ public class TraineeJvmManager {
         return javaHome;
     }
 
-    private TraineeJvm startTraineeJvm(String traineeVmOptions, File traineeHzFile) throws IOException {
+    private TraineeVm startTraineeJvm(String traineeVmOptions, File traineeHzFile) throws IOException {
         String traineeId = "" + System.currentTimeMillis();
 
         String[] clientVmOptionsArray = new String[]{};
@@ -133,16 +133,17 @@ public class TraineeJvmManager {
         args.add(traineeHzFile.getAbsolutePath());
 
         ProcessBuilder processBuilder = new ProcessBuilder(args.toArray(new String[args.size()]))
-                .directory(new File(javaHome, "bin"))
+        //        .directory(new File(javaHome, "bin"))
+                .directory(workoutHome)
                 .redirectErrorStream(true);
 
         Process process = processBuilder.start();
-        final TraineeJvm traineeJvm = new TraineeJvm(traineeId, process);
+        final TraineeVm traineeJvm = new TraineeVm(traineeId, process);
         traineeJvms.add(traineeJvm);
         return traineeJvm;
     }
 
-    private void waitForTraineeStartup(TraineeJvm jvm, int traineeTimeoutSec) throws InterruptedException {
+    private void waitForTraineeStartup(TraineeVm jvm, int traineeTimeoutSec) throws InterruptedException {
         IMap<String, InetSocketAddress> traineeParticipantMap = traineeClient.getMap(Trainee.TRAINEE_PARTICIPANT_MAP);
 
         boolean found = false;
@@ -182,14 +183,14 @@ public class TraineeJvmManager {
             traineeClient.getLifecycleService().shutdown();
         }
 
-        List<TraineeJvm> trainees = new LinkedList<TraineeJvm>();
+        List<TraineeVm> trainees = new LinkedList<TraineeVm>();
         trainees.removeAll(traineeJvms);
 
-        for (TraineeJvm jvm : trainees) {
+        for (TraineeVm jvm : trainees) {
             jvm.getProcess().destroy();
         }
 
-        for (TraineeJvm jvm : trainees) {
+        for (TraineeVm jvm : trainees) {
             int exitCode = 0;
             try {
                 exitCode = jvm.getProcess().waitFor();
@@ -210,7 +211,7 @@ public class TraineeJvmManager {
         return traineeClient;
     }
 
-    public void destroy(TraineeJvm jvm) {
+    public void destroy(TraineeVm jvm) {
         jvm.getProcess().destroy();
         traineeJvms.remove(jvm);
     }

@@ -2,7 +2,7 @@ package com.hazelcast.heartattack;
 
 import java.io.Serializable;
 
-public class TraineeSettings implements Serializable{
+public class TraineeVmSettings implements Serializable{
     private String vmOptions;
     private boolean trackLogging;
     private String hzConfig;

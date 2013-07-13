@@ -15,7 +15,7 @@ public class HeartAttackMonitor implements Runnable {
 
     public void run() {
         for (; ; ) {
-            for (TraineeJvm jvm : coach.getTraineeJvmManager().getTraineeJvms()) {
+            for (TraineeVm jvm : coach.getTraineeVmManager().getTraineeJvms()) {
                 HeartAttack heartAttack = null;
 
                 if (heartAttack == null) {
@@ -31,7 +31,7 @@ public class HeartAttackMonitor implements Runnable {
                 }
 
                 if (heartAttack != null) {
-                    coach.getTraineeJvmManager().destroy(jvm);
+                    coach.getTraineeVmManager().destroy(jvm);
                     coach.heartAttack(heartAttack);
                 }
             }
@@ -40,7 +40,7 @@ public class HeartAttackMonitor implements Runnable {
         }
     }
 
-    private HeartAttack detectMembershipFailure(TraineeJvm jvm) {
+    private HeartAttack detectMembershipFailure(TraineeVm jvm) {
         //if the jvm is not assigned a hazelcast address yet.
         if (jvm.getMember() == null) {
             return null;
@@ -59,8 +59,8 @@ public class HeartAttackMonitor implements Runnable {
         return null;
     }
 
-    private Member findMember(TraineeJvm jvm) {
-        final HazelcastInstance traineeClient = coach.getTraineeJvmManager().getTraineeClient();
+    private Member findMember(TraineeVm jvm) {
+        final HazelcastInstance traineeClient = coach.getTraineeVmManager().getTraineeClient();
         if (traineeClient == null) return null;
 
         for (Member member : traineeClient.getCluster().getMembers()) {
@@ -72,7 +72,7 @@ public class HeartAttackMonitor implements Runnable {
         return null;
     }
 
-    private HeartAttack detectHeartAttackFile(TraineeJvm jvm) {
+    private HeartAttack detectHeartAttackFile(TraineeVm jvm) {
         File workoutDir = coach.getWorkoutHome();
         if(workoutDir == null){
             return null;
@@ -93,7 +93,7 @@ public class HeartAttackMonitor implements Runnable {
         return heartAttack;
     }
 
-    private HeartAttack detectUnexpectedExit(TraineeJvm jvm) {
+    private HeartAttack detectUnexpectedExit(TraineeVm jvm) {
         Process process = jvm.getProcess();
         try {
             if (process.exitValue() != 0) {
