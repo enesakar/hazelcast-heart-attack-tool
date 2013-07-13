@@ -215,13 +215,19 @@ public class Coach {
 
     public void initWorkout(Workout workout, byte[] content) throws IOException {
         this.workout = workout;
+
         File destinationDir = new File(traineesHome, workout.getId());
 
         if (!destinationDir.mkdirs()) {
             throw new IOException(format("Can't create directory [%s]", destinationDir.getAbsolutePath()));
         }
 
+        File libDir = new File(destinationDir, "lib");
+        if (!libDir.mkdirs()) {
+            throw new IOException(format("Can't create directory [%s]", libDir.getAbsolutePath()));
+        }
+
         if (content != null)
-            Utils.unzip(content, destinationDir);
+            Utils.unzip(content, libDir);
     }
 }

@@ -32,7 +32,7 @@ public class TraineeVmManager {
     public final static String classpath = System.getProperty("java.class.path");
     public final static File heartAttackHome = getHeartAttackHome();
     public final static File traineesHome = new File(getHeartAttackHome(), "trainees");
-    public final static String classpathSperator=System.getProperty("path.separator");
+    public final static String classpathSperator = System.getProperty("path.separator");
 
     private final List<TraineeVm> traineeJvms = new CopyOnWriteArrayList<TraineeVm>();
     private final Coach coach;
@@ -106,8 +106,6 @@ public class TraineeVmManager {
             clientVmOptionsArray = traineeVmOptions.split("\\s+");
         }
 
-        String javaHome = getJavaHome();
-
         File workoutHome = coach.getWorkoutHome();
 
         List<String> args = new LinkedList<String>();
@@ -118,14 +116,10 @@ public class TraineeVmManager {
         args.add("-DtraineeId=" + traineeId);
         args.add("-Dlog4j.configuration=file:" + heartAttackHome + File.separator + "conf" + File.separator + "trainee-log4j.xml");
         args.add("-classpath");
-        File workoutJarDir = coach.getWorkoutHome();
-        if (workoutJarDir.exists()) {
-            String s = classpath + classpathSperator + new File(coach.getWorkoutHome(), "*").getAbsolutePath();
-            log.log(Level.INFO, "classpath:"+s);
-            args.add(s);
-        } else {
-            args.add(classpath);
-        }
+        File libDir = new File(coach.getWorkoutHome(), "lib");
+        String s = classpath + classpathSperator + new File(libDir, "*").getAbsolutePath();
+        log.log(Level.INFO, "classpath:" + s);
+        args.add(s);
 
         args.addAll(Arrays.asList(clientVmOptionsArray));
         args.add(Trainee.class.getName());
@@ -133,7 +127,6 @@ public class TraineeVmManager {
         args.add(traineeHzFile.getAbsolutePath());
 
         ProcessBuilder processBuilder = new ProcessBuilder(args.toArray(new String[args.size()]))
-        //        .directory(new File(javaHome, "bin"))
                 .directory(workoutHome)
                 .redirectErrorStream(true);
 
