@@ -54,7 +54,7 @@ public class Manager {
         if (traineeClassPath != null) {
             bytes = Utils.zip(traineeClassPath);
         }
-        coachExecutor.submit(new InitWorkout(workout, bytes)).get();
+        submitToAllAndWait(coachExecutor, new InitWorkout(workout, bytes));
 
         TraineeVmSettings traineeVmSettings = workout.getTraineeVmSettings();
         Set<Member> members = client.getCluster().getMembers();

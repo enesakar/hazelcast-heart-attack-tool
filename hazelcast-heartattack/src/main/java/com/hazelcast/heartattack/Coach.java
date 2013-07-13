@@ -221,7 +221,6 @@ public class Coach {
         File workoutDir = new File(traineesHome, workout.getId());
         ensureExistingDirectory(workoutDir);
 
-
         File libDir = new File(workoutDir, "lib");
         ensureExistingDirectory(libDir);
 
