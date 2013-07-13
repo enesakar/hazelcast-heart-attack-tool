@@ -204,18 +204,16 @@ public class Coach {
         }
     }
 
-    public File getWorkoutJarDir() {
-        File junkDir = new File(getHeartAttackHome(), "junk");
-        return new File(junkDir, workout.getId());
+    public File getWorkoutHome() {
+        return new File(traineesHome, workout.getId());
     }
 
     public void initWorkout(Workout workout, byte[] content) throws IOException {
         this.workout = workout;
-        File junkDir = new File(getHeartAttackHome(), "junk");
-        File destinationDir = new File(junkDir, workout.getId());
+        File destinationDir = new File(traineesHome, workout.getId());
 
-        if(!destinationDir.mkdirs()){
-            throw new IOException(format("Can't create directory [%s]",destinationDir.getAbsolutePath()));
+        if (!destinationDir.mkdirs()) {
+            throw new IOException(format("Can't create directory [%s]", destinationDir.getAbsolutePath()));
         }
 
         if (content != null)

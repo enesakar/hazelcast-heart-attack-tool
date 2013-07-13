@@ -116,9 +116,9 @@ public class TraineeJvmManager {
         args.add("-DtraineeId=" + traineeId);
         args.add("-Dlog4j.configuration=file:" + heartAttackHome + File.separator + "conf" + File.separator + "trainee-log4j.xml");
         args.add("-classpath");
-        File workoutJarDir = coach.getWorkoutJarDir();
+        File workoutJarDir = coach.getWorkoutHome();
         if (workoutJarDir.exists()) {
-            String s = classpath + classpathSperator + new File(coach.getWorkoutJarDir(), "*").getAbsolutePath();
+            String s = classpath + classpathSperator + new File(coach.getWorkoutHome(), "*").getAbsolutePath();
             log.log(Level.INFO, "classpath:"+s);
             args.add(s);
         } else {
