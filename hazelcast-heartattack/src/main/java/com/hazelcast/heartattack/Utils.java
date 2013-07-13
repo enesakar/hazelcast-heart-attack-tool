@@ -13,6 +13,20 @@ import static java.lang.String.format;
 
 public final class Utils {
 
+    public static void ensureExistingDirectory(File dir) {
+        if (dir.isDirectory()) {
+            return;
+        }
+
+        if (dir.isFile()) {
+            throw new IllegalArgumentException(format("File [%s] is not a directory", dir.getAbsolutePath()));
+        }
+
+        if (!dir.mkdirs()) {
+            throw new RuntimeException("Could not create directory: " + dir.getAbsolutePath());
+        }
+    }
+
     public static String getVersion() {
         String version = "";
         try {
@@ -29,7 +43,7 @@ public final class Utils {
     }
 
     public static byte[] zip(File directory) throws IOException {
-        System.out.println("directory:"+directory);
+        System.out.println("directory:" + directory);
         URI base = directory.toURI();
         Deque<File> queue = new LinkedList<File>();
         queue.push(directory);

@@ -165,6 +165,8 @@ public class Coach {
     }
 
     public void start() throws Exception {
+        ensureExistingDirectory(traineesHome);
+
         initCoachHazelcastInstance();
 
         traineeVmManager = new TraineeVmManager(this);
@@ -216,18 +218,15 @@ public class Coach {
     public void initWorkout(Workout workout, byte[] content) throws IOException {
         this.workout = workout;
 
-        File destinationDir = new File(traineesHome, workout.getId());
+        File workoutDir = new File(traineesHome, workout.getId());
+        ensureExistingDirectory(workoutDir);
 
-        if (!destinationDir.mkdirs()) {
-            throw new IOException(format("Can't create directory [%s]", destinationDir.getAbsolutePath()));
-        }
 
-        File libDir = new File(destinationDir, "lib");
-        if (!libDir.mkdirs()) {
-            throw new IOException(format("Can't create directory [%s]", libDir.getAbsolutePath()));
-        }
+        File libDir = new File(workoutDir, "lib");
+        ensureExistingDirectory(libDir);
 
-        if (content != null)
+        if (content != null) {
             Utils.unzip(content, libDir);
+        }
     }
 }

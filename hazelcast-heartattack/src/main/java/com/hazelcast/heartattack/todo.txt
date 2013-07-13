@@ -24,6 +24,8 @@ same host.
 
 - when exercise fails to start correctly, the system keeps running and causing exception
 
+- set java_home on coach.
+
 DONE
 
 - the trainee heart attack file should be written in the trainee subdir
