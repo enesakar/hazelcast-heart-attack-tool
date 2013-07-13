@@ -108,9 +108,11 @@ public class TraineeJvmManager {
 
         String javaHome = getJavaHome();
 
+        File workoutHome = coach.getWorkoutHome();
+
         List<String> args = new LinkedList<String>();
         args.add("java");
-        args.add(format("-XX:OnOutOfMemoryError=\"\"touch %s/trainees/%s.heartattack\"\"", heartAttackHome, traineeId));
+        args.add(format("-XX:OnOutOfMemoryError=\"\"touch %s/%s.heartattack\"\"", workoutHome, traineeId));
         args.add("-DHEART_ATTACK_HOME=" + getHeartAttackHome());
         args.add("-Dhazelcast.logging.type=log4j");
         args.add("-DtraineeId=" + traineeId);

@@ -205,7 +205,12 @@ public class Coach {
     }
 
     public File getWorkoutHome() {
-        return new File(traineesHome, workout.getId());
+        Workout _workout = workout;
+        if (_workout == null) {
+            return null;
+        }
+
+        return new File(traineesHome, _workout.getId());
     }
 
     public void initWorkout(Workout workout, byte[] content) throws IOException {

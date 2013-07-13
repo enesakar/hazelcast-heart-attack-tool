@@ -73,10 +73,16 @@ public class HeartAttackMonitor implements Runnable {
     }
 
     private HeartAttack detectHeartAttackFile(TraineeJvm jvm) {
-        File file = new File(Coach.traineesHome, jvm.getId() + ".heartattack");
+        File workoutDir = coach.getWorkoutHome();
+        if(workoutDir == null){
+            return null;
+        }
+
+        File file = new File(workoutDir, jvm.getId() + ".heartattack");
         if (!file.exists()) {
             return null;
         }
+
         HeartAttack heartAttack = new HeartAttack(
                 "out of memory",
                 coach.getCoachHz().getCluster().getLocalMember().getInetSocketAddress(),

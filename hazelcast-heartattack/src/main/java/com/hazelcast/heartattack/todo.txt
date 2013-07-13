@@ -20,13 +20,13 @@ same host.
 
 - the trainee logs should be written in the trainee subdir for that specific workout
 
-- the trainee heart attack file should be written in the trainee subdir
-
 - traineeclasspath should not be only a dir, but also be a listing of jars/directories
 
 - when exercise fails to start correctly, the system keeps running and causing exception
 
 DONE
+
+- the trainee heart attack file should be written in the trainee subdir
 
 - it should be easy to include new jars for custom exercises. These jars should be uploaded by the manager
 to the coaches.
