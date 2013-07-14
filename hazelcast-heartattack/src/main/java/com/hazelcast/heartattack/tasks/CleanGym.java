@@ -10,8 +10,8 @@ import java.io.Serializable;
 import java.util.concurrent.Callable;
 import java.util.logging.Level;
 
-public class CleanupGym implements Callable, Serializable, HazelcastInstanceAware {
-    private final static ILogger log = Logger.getLogger(CleanupGym.class);
+public class CleanGym implements Callable, Serializable, HazelcastInstanceAware {
+    private final static ILogger log = Logger.getLogger(CleanGym.class);
 
     private transient HazelcastInstance hz;
 
@@ -19,7 +19,7 @@ public class CleanupGym implements Callable, Serializable, HazelcastInstanceAwar
     public Object call() throws Exception {
         try {
             Coach coach = (Coach) hz.getUserContext().get(Coach.KEY_COACH);
-            coach.cleanupGym();
+            coach.cleanGym();
             return null;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed to spawn Trainee Virtual Machines", e);

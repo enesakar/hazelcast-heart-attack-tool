@@ -37,7 +37,7 @@ public class Manager {
     private ITopic statusTopic;
     private volatile ExerciseRecipe exerciseRecipe;
     private File traineeClassPath;
-    private boolean cleanupGym;
+    private boolean cleanGym;
 
     public void setWorkout(Workout workout) {
         this.workout = workout;
@@ -55,19 +55,21 @@ public class Manager {
         return traineeClassPath;
     }
 
-    public void setCleanupGym(boolean cleanupGym) {
-        this.cleanupGym = cleanupGym;
+    public void setCleanGym(boolean cleanGym) {
+        this.cleanGym = cleanGym;
     }
 
-    public boolean isCleanupGym() {
-        return cleanupGym;
+    public boolean isCleanGym() {
+        return cleanGym;
     }
 
     private void run() throws Exception {
         initClient();
 
-        if(cleanupGym){
-            submitToAllAndWait(coachExecutor,new CleanupGym());
+        if(cleanGym){
+            sendStatusUpdate("Starting cleanup gyms");
+            submitToAllAndWait(coachExecutor,new CleanGym());
+            sendStatusUpdate("Finished cleanup gyms");
         }
 
         byte[] bytes = null;
@@ -186,7 +188,7 @@ public class Manager {
             sendStatusUpdate("Completed exercise start");
 
             sendStatusUpdate(format("Exercise running for %s seconds", workout.getDuration()));
-            sleepSeconds(workout.getDuration(), "At %s seconds");
+            sleepSeconds(workout.getDuration());
             sendStatusUpdate("Exercise finished running");
 
             sendStatusUpdate("Starting exercise stop");
@@ -216,7 +218,7 @@ public class Manager {
         }
     }
 
-    public void sleepSeconds(int seconds, String txt) {
+    public void sleepSeconds(int seconds) {
         int period = 30;
         int big = seconds / period;
         int small = seconds % period;
@@ -228,7 +230,10 @@ public class Manager {
             }
 
             Utils.sleepSeconds(period);
-            sendStatusUpdate(format(txt, period * k));
+            final int elapsed = period * k;
+            final float percentage = (100f*elapsed) / seconds;
+            String msg = format( "%s of %s seconds %-10.2f percent complete", elapsed, seconds,percentage);
+            sendStatusUpdate(msg);
         }
 
         Utils.sleepSeconds(small);
@@ -316,7 +321,7 @@ public class Manager {
         log.log(Level.INFO, format("HEART_ATTACK_HOME: %s", HEART_ATTACK_HOME));
 
         OptionParser parser = new OptionParser();
-        OptionSpec cleanupGymSpec = parser.accepts("cleanupGym", "Cleans up the gym directory on all coaches");
+        OptionSpec cleanGymSpec = parser.accepts("cleanGym", "Cleans up the gym directory on all coaches");
 
         OptionSpec<Integer> durationSpec = parser.accepts("duration", "Number of seconds to run per workout)")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(60);
@@ -352,7 +357,7 @@ public class Manager {
                 System.exit(0);
             }
 
-            manager.setCleanupGym(options.has(cleanupGymSpec));
+            manager.setCleanGym(options.has(cleanGymSpec));
 
             if (options.has(traineeClassPathSpec)) {
                 File traineeClassPath = new File(options.valueOf(traineeClassPathSpec));

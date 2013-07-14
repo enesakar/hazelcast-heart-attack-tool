@@ -211,7 +211,7 @@ public class Coach {
         return new File(gymHome, _workout.getId());
     }
 
-    public void cleanupGym() throws IOException {
+    public void cleanGym() throws IOException {
         for(File file: gymHome.listFiles()){
             Utils.delete(file);
         }

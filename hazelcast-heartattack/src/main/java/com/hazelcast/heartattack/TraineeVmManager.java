@@ -101,7 +101,7 @@ public class TraineeVmManager {
     }
 
     private TraineeVm startTraineeJvm(String traineeVmOptions, File traineeHzFile) throws IOException {
-        String traineeId = "" +TRAINEE_ID_GENERATOR.incrementAndGet();
+        String traineeId = "trainee-" +TRAINEE_ID_GENERATOR.incrementAndGet();
 
         String[] clientVmOptionsArray = new String[]{};
         if (traineeVmOptions != null && !traineeVmOptions.trim().isEmpty()) {
