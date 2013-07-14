@@ -163,11 +163,11 @@ public class Coach {
     public void start() throws Exception {
         ensureExistingDirectory(gymHome);
 
-        initCoachHazelcastInstance();
-
         traineeVmManager = new TraineeVmManager(this);
 
         new Thread(new HeartAttackMonitor(this)).start();
+
+        initCoachHazelcastInstance();
 
         log.log(Level.INFO, "Hazelcast Assistant Coach is Ready for action");
     }
