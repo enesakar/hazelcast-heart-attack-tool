@@ -48,6 +48,8 @@ since each node will be treated equally
 
 - remove the 'exercisejunk' class. Bind directly on the ExerciseInstance
 
+- automatically clear the trainee directory option
+
 NICE TO HAVE
 
 - coaches need to write to unique filename so that multiple coaches can run in parallel (for testing).
@@ -59,8 +61,6 @@ of a running job.
 
 - currently only second based time entry is possible; which is annoying if yuo want to run for a large times. So do something
 with 10m or 2h.
-
-- automatically clear the trainee directory option
 
 - option to shutdown all trainees
 

@@ -211,6 +211,12 @@ public class Coach {
         return new File(gymHome, _workout.getId());
     }
 
+    public void cleanupGym() throws IOException {
+        for(File file: gymHome.listFiles()){
+            Utils.delete(file);
+        }
+    }
+
     public void initWorkout(Workout workout, byte[] content) throws IOException {
         heartAttacks.clear();
 

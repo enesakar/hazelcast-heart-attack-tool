@@ -37,6 +37,7 @@ public class Manager {
     private ITopic statusTopic;
     private volatile ExerciseRecipe exerciseRecipe;
     private File traineeClassPath;
+    private boolean cleanupGym;
 
     public void setWorkout(Workout workout) {
         this.workout = workout;
@@ -46,8 +47,28 @@ public class Manager {
         return exerciseRecipe;
     }
 
+    public void setTraineeClassPath(File traineeClassPath) {
+        this.traineeClassPath = traineeClassPath;
+    }
+
+    public File getTraineeClassPath() {
+        return traineeClassPath;
+    }
+
+    public void setCleanupGym(boolean cleanupGym) {
+        this.cleanupGym = cleanupGym;
+    }
+
+    public boolean isCleanupGym() {
+        return cleanupGym;
+    }
+
     private void run() throws Exception {
         initClient();
+
+        if(cleanupGym){
+            submitToAllAndWait(coachExecutor,new CleanupGym());
+        }
 
         byte[] bytes = null;
         if (traineeClassPath != null) {
@@ -295,6 +316,8 @@ public class Manager {
         log.log(Level.INFO, format("HEART_ATTACK_HOME: %s", HEART_ATTACK_HOME));
 
         OptionParser parser = new OptionParser();
+        OptionSpec cleanupGymSpec = parser.accepts("cleanupGym", "Cleans up the gym directory on all coaches");
+
         OptionSpec<Integer> durationSpec = parser.accepts("duration", "Number of seconds to run per workout)")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(60);
         OptionSpec traineeTrackLoggingSpec = parser.accepts("traineeTrackLogging", "If the coach is tracking trainee logging");
@@ -328,6 +351,8 @@ public class Manager {
                 parser.printHelpOn(System.out);
                 System.exit(0);
             }
+
+            manager.setCleanupGym(options.has(cleanupGymSpec));
 
             if (options.has(traineeClassPathSpec)) {
                 File traineeClassPath = new File(options.valueOf(traineeClassPathSpec));
@@ -449,11 +474,5 @@ public class Manager {
         }
     }
 
-    public void setTraineeClassPath(File traineeClassPath) {
-        this.traineeClassPath = traineeClassPath;
-    }
 
-    public File getTraineeClassPath() {
-        return traineeClassPath;
-    }
 }

@@ -13,6 +13,18 @@ import static java.lang.String.format;
 
 public final class Utils {
 
+    public static void delete(File f) throws IOException {
+        if(!f.exists())return;
+
+        if (f.isDirectory()) {
+            for (File c : f.listFiles())
+                delete(c);
+        }
+
+        if (!f.delete())
+            throw new FileNotFoundException("Failed to delete file: " + f);
+    }
+
     public static void ensureExistingDirectory(File dir) {
         if (dir.isDirectory()) {
             return;
