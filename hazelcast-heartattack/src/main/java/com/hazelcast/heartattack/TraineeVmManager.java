@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -85,9 +86,7 @@ public class TraineeVmManager {
         traineeClient = HazelcastClient.newHazelcastClient(clientConfig);
         traineeExecutor = traineeClient.getExecutorService(Trainee.TRAINEE_EXECUTOR);
 
-        for (TraineeVm trainee : trainees) {
-            waitForTraineeStartup(trainee, settings.getTraineeStartupTimeout());
-        }
+        waitForTraineesStartup(trainees, settings.getTraineeStartupTimeout());
 
         log.log(Level.INFO, format("Finished starting %s trainee Java Virtual Machines", settings.getTraineeCount()));
     }
@@ -138,31 +137,46 @@ public class TraineeVmManager {
         return traineeJvm;
     }
 
-    private void waitForTraineeStartup(TraineeVm jvm, int traineeTimeoutSec) throws InterruptedException {
+    private void waitForTraineesStartup(List<TraineeVm> trainees, int traineeTimeoutSec) throws InterruptedException {
         for (int l = 0; l < traineeTimeoutSec; l++) {
-            InetSocketAddress address = readAddress(jvm);
+            for (Iterator<TraineeVm> it = trainees.iterator(); it.hasNext(); ) {
+                TraineeVm jvm = it.next();
 
-            if (address != null) {
-                Member member = null;
-                for (Member m : traineeClient.getCluster().getMembers()) {
-                    if (m.getInetSocketAddress().equals(address)) {
-                        member = m;
-                        break;
+                InetSocketAddress address = readAddress(jvm);
+
+                if (address != null) {
+                    Member member = null;
+                    for (Member m : traineeClient.getCluster().getMembers()) {
+                        if (m.getInetSocketAddress().equals(address)) {
+                            member = m;
+                            break;
+                        }
+                    }
+
+                    if (member != null) {
+                        it.remove();
+                        jvm.setMember(member);
+                        log.log(Level.INFO, "Trainee: " + jvm.getId() + " Started");
                     }
                 }
-
-                if (member != null) {
-                    jvm.setMember(member);
-                    log.log(Level.INFO, "Trainee: " + jvm.getId() + " Started");
-                    return;
-                }
             }
+
+            if(trainees.isEmpty())
+                return;
 
             Utils.sleepSeconds(1);
         }
 
-        throw new RuntimeException(format("Timeout: trainee %s of workout %s on host %s didn't start within %s seconds",
-                jvm.getId(), coach.getWorkout().getId(), coach.getCoachHz().getCluster().getLocalMember().getInetSocketAddress(), traineeTimeoutSec));
+        StringBuffer sb = new StringBuffer();
+        sb.append("[");
+        sb.append(trainees.get(0).getId());
+        for(int l=1;l<trainees.size();l++){
+            sb.append(",").append(trainees.get(l));
+        }
+        sb.append("]");
+
+        throw new RuntimeException(format("Timeout: trainees %s of workout %s on host %s didn't start within %s seconds",
+                sb, coach.getWorkout().getId(), coach.getCoachHz().getCluster().getLocalMember().getInetSocketAddress(), traineeTimeoutSec));
     }
 
     private InetSocketAddress readAddress(TraineeVm jvm) {

@@ -17,11 +17,11 @@ same host.
 
 - traineeclasspath should not be only a dir, but also be a listing of jars/directories
 
-- when coach is reused.. then sometimes it fails
+DONE
 
 - the trainee startup timeout doesn't work
 
-DONE
+- when coach is reused.. then sometimes it fails
 
 - when a manager starts, it should display the members
 
