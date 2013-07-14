@@ -61,12 +61,12 @@ public class TraineeVmSettings implements Serializable{
     @Override
     public String toString() {
         return "TraineeSettings{" +
-                "hzConfig='" + hzConfig + '\'' +
-                ", vmOptions='" + vmOptions + '\'' +
-                ", trackLogging=" + trackLogging +
-                ", traineeVmCount=" + traineeCount +
-                ", traineeStartupTimeout=" + traineeStartupTimeout +
-                ", refreshJvm=" + refreshJvm +
-                '}';
+                "\n  vmOptions='" + vmOptions + '\'' +
+                "\n, trackLogging=" + trackLogging +
+                "\n, traineeVmCount=" + traineeCount +
+                "\n, traineeStartupTimeout=" + traineeStartupTimeout +
+                "\n, refreshJvm=" + refreshJvm +
+                "\n, hzConfig='" + hzConfig + '\'' +
+                "\n}";
     }
 }

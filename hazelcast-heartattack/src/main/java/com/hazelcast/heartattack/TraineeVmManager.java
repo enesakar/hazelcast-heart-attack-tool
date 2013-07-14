@@ -60,7 +60,7 @@ public class TraineeVmManager {
     }
 
     public void spawn(TraineeVmSettings settings) throws Exception {
-        log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines using settings %s", settings.getTraineeCount(), settings));
+        log.log(Level.INFO, format("Starting %s trainee Java Virtual Machines using settings\n %s", settings.getTraineeCount(), settings));
 
         File traineeHzFile = File.createTempFile("trainee-hazelcast", "xml");
         traineeHzFile.deleteOnExit();
@@ -139,7 +139,6 @@ public class TraineeVmManager {
     }
 
     private void waitForTraineeStartup(TraineeVm jvm, int traineeTimeoutSec) throws InterruptedException {
-        boolean found = false;
         for (int l = 0; l < traineeTimeoutSec; l++) {
             InetSocketAddress address = readAddress(jvm);
 
@@ -152,24 +151,18 @@ public class TraineeVmManager {
                     }
                 }
 
-                if (member == null) {
-                    throw new RuntimeException("No member found for address: " + address);
+                if (member != null) {
+                    jvm.setMember(member);
+                    log.log(Level.INFO, "Trainee: " + jvm.getId() + " Started");
+                    return;
                 }
-
-                jvm.setMember(member);
-                found = true;
-                break;
-            } else {
-                Utils.sleepSeconds(1);
             }
+
+            Utils.sleepSeconds(1);
         }
 
-        if (!found) {
-            throw new RuntimeException(format("Timeout: trainee %s of workout %s on host %s didn't start within %s seconds",
-                    jvm.getId(), coach.getWorkout().getId(), coach.getCoachHz().getCluster().getLocalMember().getInetSocketAddress(), traineeTimeoutSec));
-        }
-
-        log.log(Level.INFO, "Trainee: " + jvm.getId() + " Started");
+        throw new RuntimeException(format("Timeout: trainee %s of workout %s on host %s didn't start within %s seconds",
+                jvm.getId(), coach.getWorkout().getId(), coach.getCoachHz().getCluster().getLocalMember().getInetSocketAddress(), traineeTimeoutSec));
     }
 
     private InetSocketAddress readAddress(TraineeVm jvm) {
