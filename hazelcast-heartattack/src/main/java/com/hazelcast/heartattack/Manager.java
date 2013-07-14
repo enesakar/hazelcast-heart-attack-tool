@@ -6,7 +6,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.heartattack.tasks.*;
-import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import joptsimple.OptionException;
@@ -37,7 +36,7 @@ public class Manager {
     private HazelcastInstance client;
     private ITopic statusTopic;
     private volatile ExerciseRecipe exerciseRecipe;
-    private File traineeClassPath;
+    private String traineeClassPath;
     private boolean cleanGym;
 
     public void setWorkout(Workout workout) {
@@ -48,11 +47,11 @@ public class Manager {
         return exerciseRecipe;
     }
 
-    public void setTraineeClassPath(File traineeClassPath) {
+    public void setTraineeClassPath(String traineeClassPath) {
         this.traineeClassPath = traineeClassPath;
     }
 
-    public File getTraineeClassPath() {
+    public String getTraineeClassPath() {
         return traineeClassPath;
     }
 
@@ -63,7 +62,6 @@ public class Manager {
     public boolean isCleanGym() {
         return cleanGym;
     }
-
 
     public String membersString() {
         StringBuilder sb = new StringBuilder("\n\nMembers [");
@@ -84,16 +82,13 @@ public class Manager {
 
         log.log(Level.INFO, membersString());
 
-        if(cleanGym){
+        if (cleanGym) {
             sendStatusUpdate("Starting cleanup gyms");
-            submitToAllAndWait(coachExecutor,new CleanGym());
+            submitToAllAndWait(coachExecutor, new CleanGym());
             sendStatusUpdate("Finished cleanup gyms");
         }
 
-        byte[] bytes = null;
-        if (traineeClassPath != null) {
-            bytes = Utils.zip(traineeClassPath);
-        }
+        byte[] bytes = createUpload();
         submitToAllAndWait(coachExecutor, new InitWorkout(workout, bytes));
 
         TraineeVmSettings traineeVmSettings = workout.getTraineeVmSettings();
@@ -151,6 +146,39 @@ public class Manager {
             log.log(Level.SEVERE, sb.toString());
             System.exit(1);
         }
+    }
+
+    private byte[] createUpload() throws IOException {
+        if (traineeClassPath == null)
+            return null;
+
+        String[] parts = traineeClassPath.split(";");
+        List<File> files = new LinkedList<File>();
+        for (int k = 0; k < parts.length; k++) {
+            String filePath = parts[k];
+
+            File file = new File(filePath);
+
+            if (file.getName().contains("*")) {
+                File parent = file.getParentFile();
+                String regex = file.getName().replace("*", "(.*)");
+                if (!parent.isDirectory()) {
+                    throw new IOException(format("Can't create upload, file [%s] is not a directory", parent));
+                }
+
+                for (File child : parent.listFiles()) {
+                    if (child.getName().matches(regex)) {
+                        files.add(child);
+                    }
+                }
+            } else if (file.exists()) {
+                files.add(file);
+            } else {
+                throw new IOException(format("Can't create upload, file [%s] doesn't exist", filePath));
+            }
+        }
+
+        return Utils.zip(files);
     }
 
     private void runWorkout(Workout workout) throws Exception {
@@ -249,8 +277,8 @@ public class Manager {
 
             Utils.sleepSeconds(period);
             final int elapsed = period * k;
-            final float percentage = (100f*elapsed) / seconds;
-            String msg = format( "Running %s of %s seconds %-4.2f percent complete", elapsed, seconds,percentage);
+            final float percentage = (100f * elapsed) / seconds;
+            String msg = format("Running %s of %s seconds %-4.2f percent complete", elapsed, seconds, percentage);
             sendStatusUpdate(msg);
         }
 
@@ -346,9 +374,9 @@ public class Manager {
         OptionSpec traineeTrackLoggingSpec = parser.accepts("traineeTrackLogging", "If the coach is tracking trainee logging");
         OptionSpec<Integer> traineeCountSpec = parser.accepts("traineeVmCount", "Number of trainee VM's per coach")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(1);
-        OptionSpec<String> traineeClassPathSpec = parser.accepts("traineeClassPath", "A directory containing the jars that are going to be uploaded to the coaches")
+        OptionSpec<String> traineeClassPathSpec = parser.accepts("traineeClassPath", "A file/directory containing the classes/jars/resources that are going to be uploaded to the coaches. " +
+                "Use ';' as separator for multiple entries. Wildcard '*' can also be used.")
                 .withRequiredArg().ofType(String.class);
-
         OptionSpec<Integer> traineeStartupTimeoutSpec = parser.accepts("traineeStartupTimeout", "The startup timeout in seconds for a trainee")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(60);
         OptionSpec<Boolean> traineeRefreshSpec = parser.accepts("traineeFresh", "If the trainee VM's should be replaced after every workout")
@@ -378,11 +406,7 @@ public class Manager {
             manager.setCleanGym(options.has(cleanGymSpec));
 
             if (options.has(traineeClassPathSpec)) {
-                File traineeClassPath = new File(options.valueOf(traineeClassPathSpec));
-                if (!traineeClassPath.exists()) {
-                    exitWithError(format("traineeClassPath [%s] doesn't exist.\n", traineeClassPath));
-                }
-                manager.setTraineeClassPath(traineeClassPath);
+                manager.setTraineeClassPath(options.valueOf(traineeClassPathSpec));
             }
 
             File coachHzFile = new File(options.valueOf(coachHzFileSpec));

@@ -15,9 +15,9 @@ TODO
 - the manager should have more advanced configuration to connect to the coach cluster, currently it needs to be on the
 same host.
 
-- traineeclasspath should not be only a dir, but also be a listing of jars/directories
-
 DONE
+
+- traineeclasspath should not be only a dir, but also be a listing of jars/directories
 
 - the trainee startup timeout doesn't work
 

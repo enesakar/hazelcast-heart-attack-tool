@@ -2,9 +2,7 @@ package com.hazelcast.heartattack;
 
 import java.io.*;
 import java.net.URI;
-import java.util.Deque;
-import java.util.LinkedList;
-import java.util.Properties;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -14,7 +12,7 @@ import static java.lang.String.format;
 public final class Utils {
 
     public static void delete(File f) throws IOException {
-        if(!f.exists())return;
+        if (!f.exists()) return;
 
         if (f.isDirectory()) {
             for (File c : f.listFiles())
@@ -54,33 +52,42 @@ public final class Utils {
         return version;
     }
 
-    public static byte[] zip(File directory) throws IOException {
-        URI base = directory.toURI();
+    public static byte[] zip(List<File> roots) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
         Deque<File> queue = new LinkedList<File>();
-        queue.push(directory);
-        ByteArrayOutputStream out = new ByteArrayOutputStream(10 * 1000 * 1000);
-        Closeable res = out;
+        ZipOutputStream zout = new ZipOutputStream(out);
+
+        Set<String> names = new HashSet<String>();
+
         try {
-            ZipOutputStream zout = new ZipOutputStream(out);
-            res = zout;
-            while (!queue.isEmpty()) {
-                directory = queue.pop();
-                for (File kid : directory.listFiles()) {
-                    String name = base.relativize(kid.toURI()).getPath();
-                    if (kid.isDirectory()) {
-                        queue.push(kid);
+            for (File root : roots) {
+                URI base = root.isDirectory() ? root.toURI() : root.getParentFile().toURI();
+                queue.push(root);
+                while (!queue.isEmpty()) {
+                    File file = queue.pop();
+                    if (file.isDirectory()) {
+                        String name = base.relativize(file.toURI()).getPath();
                         name = name.endsWith("/") ? name : name + "/";
+
+                        if (names.add(name)) {
+                            zout.putNextEntry(new ZipEntry(name));
+                        }
+
+                        for (File kid : file.listFiles()) {
+                            queue.push(kid);
+                        }
+                    } else {
+                        String name = base.relativize(file.toURI()).getPath();
                         zout.putNextEntry(new ZipEntry(name));
-                    } else if (!kid.getName().equals(".DS_Store")) {
-                        zout.putNextEntry(new ZipEntry(name));
-                        copy(kid, zout);
+                        copy(file, zout);
                         zout.closeEntry();
                     }
                 }
             }
         } finally {
-            res.close();
+            zout.close();
         }
+
         return out.toByteArray();
     }
 
