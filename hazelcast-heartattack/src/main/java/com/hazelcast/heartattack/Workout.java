@@ -9,7 +9,7 @@ public class Workout implements Serializable{
 
     private static final long serialVersionUID = 1;
 
-    private final String id = UUID.randomUUID().toString();
+    private final String id = ""+System.currentTimeMillis();
 
     private List<ExerciseRecipe> exerciseRecipeList = new LinkedList<ExerciseRecipe>();
     private int duration;

@@ -26,8 +26,6 @@ public class ShoutToTraineesTask implements Callable, Serializable, HazelcastIns
 
     @Override
     public Object call() throws Exception {
-        log.log(Level.INFO, "ShoutToTraineesTask");
-
         try {
             Coach coach = (Coach) hz.getUserContext().get(Coach.KEY_COACH);
             coach.shoutToTrainees(task, taskDescription);
