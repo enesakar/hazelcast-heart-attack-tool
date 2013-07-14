@@ -6,13 +6,14 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.IExecutorService;
-import com.hazelcast.core.IMap;
 import com.hazelcast.core.Member;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -101,7 +102,7 @@ public class TraineeVmManager {
     }
 
     private TraineeVm startTraineeJvm(String traineeVmOptions, File traineeHzFile) throws IOException {
-        String traineeId = "trainee-" +TRAINEE_ID_GENERATOR.incrementAndGet();
+        String traineeId = "trainee-" + TRAINEE_ID_GENERATOR.incrementAndGet();
 
         String[] clientVmOptionsArray = new String[]{};
         if (traineeVmOptions != null && !traineeVmOptions.trim().isEmpty()) {
@@ -138,13 +139,11 @@ public class TraineeVmManager {
     }
 
     private void waitForTraineeStartup(TraineeVm jvm, int traineeTimeoutSec) throws InterruptedException {
-        IMap<String, InetSocketAddress> traineeParticipantMap = traineeClient.getMap(Trainee.TRAINEE_PARTICIPANT_MAP);
-
         boolean found = false;
         for (int l = 0; l < traineeTimeoutSec; l++) {
-            if (traineeParticipantMap.containsKey(jvm.getId())) {
-                InetSocketAddress address = traineeParticipantMap.remove(jvm.getId());
+            InetSocketAddress address = readAddress(jvm);
 
+            if (address != null) {
                 Member member = null;
                 for (Member m : traineeClient.getCluster().getMembers()) {
                     if (m.getInetSocketAddress().equals(address)) {
@@ -169,7 +168,29 @@ public class TraineeVmManager {
             throw new RuntimeException(format("Timeout: trainee %s of workout %s on host %s didn't start within %s seconds",
                     jvm.getId(), coach.getWorkout().getId(), coach.getCoachHz().getCluster().getLocalMember().getInetSocketAddress(), traineeTimeoutSec));
         }
+
         log.log(Level.INFO, "Trainee: " + jvm.getId() + " Started");
+    }
+
+    private InetSocketAddress readAddress(TraineeVm jvm) {
+        File workoutHome = coach.getWorkoutHome();
+
+        File file = new File(workoutHome, jvm.getId() + ".address");
+        if (!file.exists()) return null;
+
+        try {
+            FileInputStream fis = new FileInputStream(file);
+            try {
+                ObjectInputStream in = new ObjectInputStream(fis);
+                return (InetSocketAddress) in.readObject();
+            } finally {
+                Utils.closeQuietly(fis);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void destroyAll() {

@@ -38,7 +38,7 @@ public class Coach {
     private volatile ITopic statusTopic;
     private volatile Workout workout;
     private volatile ExerciseRecipe exerciseRecipe;
-    private List<HeartAttack> heartAttacks = Collections.synchronizedList(new LinkedList<HeartAttack>());
+    private final List<HeartAttack> heartAttacks = Collections.synchronizedList(new LinkedList<HeartAttack>());
     private IExecutorService coachExecutor;
     private TraineeVmManager traineeVmManager;
 

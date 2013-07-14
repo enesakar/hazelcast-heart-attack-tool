@@ -19,7 +19,8 @@ same host.
 
 - traineeclasspath should not be only a dir, but also be a listing of jars/directories
 
--
+- the trainee and coach should not communicate through the map the find the id/member information since I have the impression
+that the map is broken. So probably better to use a file containing the member info,
 
 DONE
 

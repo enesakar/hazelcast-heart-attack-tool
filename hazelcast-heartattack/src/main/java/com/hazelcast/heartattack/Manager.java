@@ -232,7 +232,7 @@ public class Manager {
             Utils.sleepSeconds(period);
             final int elapsed = period * k;
             final float percentage = (100f*elapsed) / seconds;
-            String msg = format( "%s of %s seconds %-10.2f percent complete", elapsed, seconds,percentage);
+            String msg = format( "%s of %s seconds %-4.2f percent complete", elapsed, seconds,percentage);
             sendStatusUpdate(msg);
         }
 

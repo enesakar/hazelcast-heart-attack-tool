@@ -8,7 +8,7 @@ import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
-import java.io.FileNotFoundException;
+import java.io.*;
 import java.net.InetSocketAddress;
 import java.util.logging.Level;
 
@@ -16,12 +16,10 @@ public class Trainee {
 
     final static ILogger log = Logger.getLogger(Trainee.class.getName());
 
-    public static final String TRAINEE_PARTICIPANT_MAP = "Trainee:ParticipantMap";
     public static final String TRAINEE_EXECUTOR = "Trainee:Executor";
 
     private String traineeId;
     private HazelcastInstance hz;
-    private IMap<String, InetSocketAddress> map;
     private String traineeHzFile;
 
     public void setTraineeId(String traineeId) {
@@ -37,8 +35,26 @@ public class Trainee {
         this.hz = createHazelcastInstance();
         log.log(Level.INFO, "Successfully created Trainee HazelcastInstance");
 
-        this.map = hz.getMap(TRAINEE_PARTICIPANT_MAP);
-        this.map.put(traineeId, hz.getCluster().getLocalMember().getInetSocketAddress());
+        signalStartToCoach();
+    }
+
+    public void signalStartToCoach() {
+        InetSocketAddress address = hz.getCluster().getLocalMember().getInetSocketAddress();
+        File file = new File(traineeId + ".address.tmp");
+
+        try {
+            final FileOutputStream fous = new FileOutputStream(file);
+            ObjectOutput output = new ObjectOutputStream(fous);
+            try {
+                output.writeObject(address);
+            } finally {
+                Utils.closeQuietly(fous);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        file.renameTo(new File(traineeId+".address"));
     }
 
     public HazelcastInstance createHazelcastInstance() {

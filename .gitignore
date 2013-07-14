@@ -9,6 +9,6 @@ target/
 *.log
 *.log.lck
 *.heartattack
-hazelcast-heartattack/trainees/*
+hazelcast-heartattack/gym/*
 hazelcast-heartattack/logs/*
 hazelcast-heartattack/junk/*
