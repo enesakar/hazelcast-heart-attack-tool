@@ -15,10 +15,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.InetSocketAddress;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -138,8 +135,10 @@ public class TraineeVmManager {
     }
 
     private void waitForTraineesStartup(List<TraineeVm> trainees, int traineeTimeoutSec) throws InterruptedException {
+        List<TraineeVm> todo = new ArrayList<TraineeVm>(trainees);
+
         for (int l = 0; l < traineeTimeoutSec; l++) {
-            for (Iterator<TraineeVm> it = trainees.iterator(); it.hasNext(); ) {
+            for (Iterator<TraineeVm> it = todo.iterator(); it.hasNext(); ) {
                 TraineeVm jvm = it.next();
 
                 InetSocketAddress address = readAddress(jvm);
@@ -156,12 +155,12 @@ public class TraineeVmManager {
                     if (member != null) {
                         it.remove();
                         jvm.setMember(member);
-                        log.log(Level.INFO, "Trainee: " + jvm.getId() + " Started");
+                        log.log(Level.INFO, format("Trainee: %s Started %s of %s", jvm.getId(), trainees.size() - todo.size(), trainees.size()));
                     }
                 }
             }
 
-            if(trainees.isEmpty())
+            if (todo.isEmpty())
                 return;
 
             Utils.sleepSeconds(1);
@@ -169,9 +168,9 @@ public class TraineeVmManager {
 
         StringBuffer sb = new StringBuffer();
         sb.append("[");
-        sb.append(trainees.get(0).getId());
-        for(int l=1;l<trainees.size();l++){
-            sb.append(",").append(trainees.get(l));
+        sb.append(todo.get(0).getId());
+        for (int l = 1; l < todo.size(); l++) {
+            sb.append(",").append(todo.get(l));
         }
         sb.append("]");
 

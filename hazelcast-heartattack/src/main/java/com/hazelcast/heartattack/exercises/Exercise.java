@@ -1,14 +1,16 @@
 package com.hazelcast.heartattack.exercises;
 
 
+import com.hazelcast.core.HazelcastInstance;
+
 /**
  * The ExerciseInstance is the 'thing' that contains the actual logic we want to run.
  * information.
  * <p/>
  * Order of lifecycle methods:
  * <ol>
- * <li>{@link #globalSetup()}</li>
  * <li>{@link #localSetup()}</li>
+ * <li>{@link #globalSetup()}</li>
  * <li>{@link #start()}</li>
  * <li>{@link #stop()}</li>
  * <li>{@link #localVerify()}</li>
@@ -71,4 +73,8 @@ public interface Exercise {
     void localVerify() throws Exception;
 
     void globalVerify() throws Exception;
+
+    void setHazelcastInstance(HazelcastInstance hazelcastInstance);
+
+    void setExerciseId(String id);
 }

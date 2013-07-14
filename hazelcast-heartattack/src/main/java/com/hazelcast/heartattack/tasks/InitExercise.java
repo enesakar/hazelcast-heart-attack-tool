@@ -3,7 +3,6 @@ package com.hazelcast.heartattack.tasks;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.heartattack.ExerciseRecipe;
-import com.hazelcast.heartattack.exercises.AbstractExercise;
 import com.hazelcast.heartattack.exercises.Exercise;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -32,7 +31,7 @@ public class InitExercise implements Callable, Serializable, HazelcastInstanceAw
             log.log(Level.INFO, "Init Exercise");
             String clazzName = exerciseRecipe.getClassname();
 
-            AbstractExercise exercise = (AbstractExercise) InitExercise.class.getClassLoader().loadClass(clazzName).newInstance();
+            Exercise exercise = (Exercise) InitExercise.class.getClassLoader().loadClass(clazzName).newInstance();
             exercise.setHazelcastInstance(hz);
             exercise.setExerciseId(exerciseRecipe.getExerciseId());
 
@@ -49,7 +48,7 @@ public class InitExercise implements Callable, Serializable, HazelcastInstanceAw
     private void bindProperties(Exercise exercise) throws NoSuchFieldException, IllegalAccessException {
         for (Map.Entry<String, String> entry : exerciseRecipe.getProperties().entrySet()) {
             String property = entry.getKey();
-            if("class".equals(property)){
+            if ("class".equals(property)) {
                 continue;
             }
             String value = entry.getValue();

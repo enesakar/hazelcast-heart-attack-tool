@@ -193,13 +193,13 @@ public class Manager {
             submitToAllTrainesAndWait(new InitExercise(exerciseRecipe), "exercise initializing");
             sendStatusUpdate("Completed Exercise initialization");
 
-            sendStatusUpdate("Starting exercise global setup");
-            submitToOneTrainee(new GenericExerciseTask("globalSetup"));
-            sendStatusUpdate("Completed exercise global setup");
-
             sendStatusUpdate("Starting exercise local setup");
             submitToAllTrainesAndWait(new GenericExerciseTask("localSetup"), "exercise local setup");
             sendStatusUpdate("Completed exercise local setup");
+
+            sendStatusUpdate("Starting exercise global setup");
+            submitToOneTrainee(new GenericExerciseTask("globalSetup"));
+            sendStatusUpdate("Completed exercise global setup");
 
             sendStatusUpdate("Starting exercise start");
             submitToAllTrainesAndWait(new GenericExerciseTask("start"), "exercise start");
