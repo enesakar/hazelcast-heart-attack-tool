@@ -15,14 +15,20 @@ TODO
 - the manager should have more advanced configuration to connect to the coach cluster, currently it needs to be on the
 same host.
 
-- the trainee logs should be written in the trainee subdir for that specific workout
-
 - traineeclasspath should not be only a dir, but also be a listing of jars/directories
+
+- when coach is reused.. then sometimes it fails
+
+- the trainee startup timeout doesn't work
+
+DONE
+
+- when a manager starts, it should display the members
 
 - the trainee and coach should not communicate through the map the find the id/member information since I have the impression
 that the map is broken. So probably better to use a file containing the member info,
 
-DONE
+- the trainee logs should be written in the trainee subdir for that specific workout
 
 - when an exception is thrown by one of the ExerciseInstance method, it isn't correctly translated to a heartattack (lots
 of information missing).

@@ -8,8 +8,21 @@ import java.util.UUID;
 
 public class ExerciseRunner {
 
+    private HazelcastInstance hz;
+
+    public HazelcastInstance getHz() {
+        return hz;
+    }
+
+    public void setHz(HazelcastInstance hz) {
+        this.hz = hz;
+    }
+
     public void run(AbstractExercise exercise, int durationSec) throws Exception {
-        HazelcastInstance hz = Hazelcast.newHazelcastInstance();
+        if (hz == null) {
+            hz = Hazelcast.newHazelcastInstance();
+        }
+
         exercise.setHazelcastInstance(hz);
         exercise.setExerciseId(UUID.randomUUID().toString());
         exercise.globalSetup();
@@ -23,6 +36,5 @@ public class ExerciseRunner {
         exercise.globalTearDown();
         hz.getLifecycleService().shutdown();
         System.out.println("Finished");
-        System.exit(0);
     }
 }

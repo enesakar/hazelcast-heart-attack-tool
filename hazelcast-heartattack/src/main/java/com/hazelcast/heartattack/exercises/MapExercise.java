@@ -19,23 +19,13 @@ public class MapExercise extends AbstractExercise {
     private Random random = new Random();
 
     public int threadCount = 10;
-
     private int keyLength = 10;
-
     private int valueLength = 10;
-
     private int keyCount = 10000;
-
     private int valueCount = 10000;
 
     @Override
     public void localSetup() throws Exception {
-        log.log(Level.SEVERE, "threadCount: "+threadCount);
-        log.log(Level.SEVERE, "keyLength: "+keyLength);
-        log.log(Level.SEVERE, "valueLength: "+valueLength);
-        log.log(Level.SEVERE, "keyCount: "+keyCount);
-        log.log(Level.SEVERE, "valueCount: "+valueCount);
-
         map = hazelcastInstance.getMap(exerciseId + ":Map");
         for (int k = 0; k < threadCount; k++) {
             spawn(new Worker());

@@ -6,6 +6,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.heartattack.tasks.*;
+import com.hazelcast.instance.MemberImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import joptsimple.OptionException;
@@ -63,8 +64,25 @@ public class Manager {
         return cleanGym;
     }
 
+
+    public String membersString() {
+        StringBuilder sb = new StringBuilder("\n\nMembers [");
+        final Set<Member> members = client.getCluster().getMembers();
+        sb.append(members != null ? members.size() : 0);
+        sb.append("] {");
+        if (members != null) {
+            for (Member member : members) {
+                sb.append("\n\t").append(member);
+            }
+        }
+        sb.append("\n}\n");
+        return sb.toString();
+    }
+
     private void run() throws Exception {
         initClient();
+
+        log.log(Level.INFO, membersString());
 
         if(cleanGym){
             sendStatusUpdate("Starting cleanup gyms");
@@ -232,7 +250,7 @@ public class Manager {
             Utils.sleepSeconds(period);
             final int elapsed = period * k;
             final float percentage = (100f*elapsed) / seconds;
-            String msg = format( "%s of %s seconds %-4.2f percent complete", elapsed, seconds,percentage);
+            String msg = format( "Running %s of %s seconds %-4.2f percent complete", elapsed, seconds,percentage);
             sendStatusUpdate(msg);
         }
 
@@ -321,7 +339,7 @@ public class Manager {
         log.log(Level.INFO, format("HEART_ATTACK_HOME: %s", HEART_ATTACK_HOME));
 
         OptionParser parser = new OptionParser();
-        OptionSpec cleanGymSpec = parser.accepts("cleanGym", "Cleans up the gym directory on all coaches");
+        OptionSpec cleanGymSpec = parser.accepts("cleanGym", "Cleans the gym directory on all coaches");
 
         OptionSpec<Integer> durationSpec = parser.accepts("duration", "Number of seconds to run per workout)")
                 .withRequiredArg().ofType(Integer.class).defaultsTo(60);

@@ -228,6 +228,10 @@ public class TraineeVmManager {
 
     public void destroy(TraineeVm jvm) {
         jvm.getProcess().destroy();
+        try {
+            jvm.getProcess().waitFor();
+        } catch (InterruptedException e) {
+        }
         traineeJvms.remove(jvm);
     }
 }
