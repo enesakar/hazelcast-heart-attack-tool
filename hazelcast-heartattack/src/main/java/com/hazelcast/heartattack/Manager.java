@@ -1,6 +1,5 @@
 package com.hazelcast.heartattack;
 
-import com.hazelcast.client.GenericError;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.config.Config;
@@ -148,36 +147,47 @@ public class Manager {
         try {
             sendStatusUpdate(exerciseRecipe.toString());
 
-            sendStatusUpdate("Exercise initializing");
+            sendStatusUpdate("Starting Exercise initialization");
             submitToAllAndWait(coachExecutor, new PrepareCoachForExercise(exerciseRecipe));
-            shoutAndWait(new InitExercise(exerciseRecipe));
+            submitToAllTrainesAndWait(new InitExercise(exerciseRecipe), "exercise initializing");
+            sendStatusUpdate("Completed Exercise initialization");
 
-            sendStatusUpdate("Exercise global setup");
+            sendStatusUpdate("Starting exercise global setup");
             submitToOneTrainee(new GenericExerciseTask("globalSetup"));
+            sendStatusUpdate("Completed exercise global setup");
 
-            sendStatusUpdate("Exercise local setup");
-            shoutAndWait(new GenericExerciseTask("localSetup"));
+            sendStatusUpdate("Starting exercise local setup");
+            submitToAllTrainesAndWait(new GenericExerciseTask("localSetup"), "exercise local setup");
+            sendStatusUpdate("Completed exercise local setup");
 
-            sendStatusUpdate("Exercise task");
-            shoutAndWait(new GenericExerciseTask("start"));
+            sendStatusUpdate("Starting exercise start");
+            submitToAllTrainesAndWait(new GenericExerciseTask("start"), "exercise start");
+            sendStatusUpdate("Completed exercise start");
 
             sendStatusUpdate(format("Exercise running for %s seconds", workout.getDuration()));
             sleepSeconds(workout.getDuration(), "At %s seconds");
+            sendStatusUpdate("Exercise finished running");
 
-            sendStatusUpdate("Exercise stop");
-            shoutAndWait(new GenericExerciseTask("stop"));
+            sendStatusUpdate("Starting exercise stop");
+            submitToAllTrainesAndWait(new GenericExerciseTask("stop"), "exercise stop");
+            sendStatusUpdate("Completed exercise stop");
 
-            sendStatusUpdate("Exercise global verify");
+            sendStatusUpdate("Starting exercise global verify");
             submitToOneTrainee(new GenericExerciseTask("globalVerify"));
+            sendStatusUpdate("Completed exercise global verify");
 
-            sendStatusUpdate("Exercise local verify");
-            shoutAndWait(new GenericExerciseTask("localVerify"));
+            sendStatusUpdate("Starting exercise local verify");
+            submitToAllTrainesAndWait(new GenericExerciseTask("localVerify"), "exercise local verify");
+            sendStatusUpdate("Completed exercise local verify");
 
-            sendStatusUpdate("Exercise local tear down");
-            shoutAndWait(new GenericExerciseTask("localTearDown"));
+            sendStatusUpdate("Starting exercise local teardown");
+            submitToAllTrainesAndWait(new GenericExerciseTask("localTearDown"), "exercise local tearDown");
+            sendStatusUpdate("Completed exercise local teardown");
 
-            sendStatusUpdate("Exercise global tear down");
+            sendStatusUpdate("Starting exercise global teardown");
             submitToOneTrainee(new GenericExerciseTask("globalTearDown"));
+            sendStatusUpdate("Finished exercise global teardown");
+
             return heartAttackList.size() > oldCount;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Failed", e);
@@ -191,6 +201,11 @@ public class Manager {
         int small = seconds % period;
 
         for (int k = 1; k <= big; k++) {
+            if (heartAttackList.size() > 0) {
+                sendStatusUpdate("Heart attack detected, aborting execution of exercise");
+                return;
+            }
+
             Utils.sleepSeconds(period);
             sendStatusUpdate(format(txt, period * k));
         }
@@ -226,19 +241,20 @@ public class Manager {
     private void submitToOneTrainee(Callable task) throws InterruptedException, ExecutionException {
         Future future = coachExecutor.submit(new TellTrainee(task));
         try {
-            Object o = future.get();
-            if (o instanceof GenericError) {
-                GenericError error = (GenericError) o;
-                throw new ExecutionException(error.getMessage() + ": details:" + error.getDetails(), null);
-            }
+            Object o = future.get(1000, TimeUnit.SECONDS);
         } catch (ExecutionException e) {
-            statusTopic.publish(new HeartAttack(null, null, null, null, getExerciseRecipe(), e));
-            throw e;
+            if (!(e.getCause() instanceof HeartAttackAlreadyThrownRuntimeException)) {
+                statusTopic.publish(new HeartAttack(null, null, null, null, getExerciseRecipe(), e));
+            }
+            throw new RuntimeException(e);
+        } catch (TimeoutException e) {
+            statusTopic.publish(new HeartAttack("Timeout waiting for remote operation to complete", null, null, null, getExerciseRecipe(), e));
+            throw new RuntimeException(e);
         }
     }
 
-    private void shoutAndWait(Callable task) throws InterruptedException, ExecutionException {
-        submitToAllAndWait(coachExecutor, new ShoutTask(task));
+    private void submitToAllTrainesAndWait(Callable task, String taskDescription) throws InterruptedException, ExecutionException {
+        submitToAllAndWait(coachExecutor, new ShoutToTraineesTask(task, taskDescription));
     }
 
     private void submitToAllAndWait(IExecutorService executorService, Callable task) throws InterruptedException, ExecutionException {
@@ -250,16 +266,14 @@ public class Manager {
         for (Future future : futures) {
             try {
                 Object o = future.get(1000, TimeUnit.SECONDS);
-                if (o instanceof GenericError) {
-                    GenericError error = (GenericError) o;
-                    throw new ExecutionException(error.getMessage() + ": details:" + error.getDetails(), null);
-                }
             } catch (TimeoutException e) {
-                statusTopic.publish(new HeartAttack(null, null, null, null, getExerciseRecipe(), e));
+                statusTopic.publish(new HeartAttack("Timeout waiting for remote operation to complete", null, null, null, getExerciseRecipe(), e));
                 throw new RuntimeException(e);
             } catch (ExecutionException e) {
-                statusTopic.publish(new HeartAttack(null, null, null, null, getExerciseRecipe(), e));
-                throw e;
+                if (!(e.getCause() instanceof HeartAttackAlreadyThrownRuntimeException)) {
+                    statusTopic.publish(new HeartAttack(null, null, null, null, getExerciseRecipe(), e));
+                }
+                throw new RuntimeException(e);
             }
         }
     }
@@ -428,8 +442,8 @@ public class Manager {
         try {
             properties.load(in);
             return properties;
-        }catch(IOException e){
-            throw new RuntimeException(format("Failed to load workout property file [%s]",file.getAbsolutePath()),e);
+        } catch (IOException e) {
+            throw new RuntimeException(format("Failed to load workout property file [%s]", file.getAbsolutePath()), e);
         } finally {
             Utils.closeQuietly(in);
         }

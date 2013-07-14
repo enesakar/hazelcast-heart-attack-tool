@@ -12,9 +12,6 @@ TODO
 
 - currently the client is running in the directory of the jvm; which of course is no good.
 
-- when an exception is thrown by one of the ExerciseInstance method, it isn't correctly translated to a heartattack (lots
-of information missing).
-
 - the manager should have more advanced configuration to connect to the coach cluster, currently it needs to be on the
 same host.
 
@@ -22,11 +19,12 @@ same host.
 
 - traineeclasspath should not be only a dir, but also be a listing of jars/directories
 
-- when exercise fails to start correctly, the system keeps running and causing exception
-
-- set java_home on coach.
-
 DONE
+
+- when an exception is thrown by one of the ExerciseInstance method, it isn't correctly translated to a heartattack (lots
+of information missing).
+
+- when exercise fails to start correctly, the system keeps running and causing exception
 
 - the trainee heart attack file should be written in the trainee subdir
 

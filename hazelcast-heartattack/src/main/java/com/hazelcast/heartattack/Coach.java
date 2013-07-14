@@ -131,7 +131,7 @@ public class Coach {
         statusTopic.publish(heartAttack);
     }
 
-    public void shoutToTrainees(Callable task) throws InterruptedException {
+    public void shoutToTrainees(Callable task, String taskDescription) throws InterruptedException {
         Map<TraineeVm, Future> futures = new HashMap<TraineeVm, Future>();
 
         for (TraineeVm traineeJvm : getTraineeVmManager().getTraineeJvms()) {
@@ -146,20 +146,17 @@ public class Coach {
             TraineeVm traineeJvm = entry.getKey();
             Future future = entry.getValue();
             try {
-                Object o = future.get();
-                if (o instanceof GenericError) {
-                    GenericError error = (GenericError) o;
-                    throw new ExecutionException(error.getMessage() + ": details:" + error.getDetails(), null);
-                }
+                future.get();
             } catch (ExecutionException e) {
                 final HeartAttack heartAttack = new HeartAttack(
-                        null,
+                        taskDescription,
                         coachHz.getCluster().getLocalMember().getInetSocketAddress(),
                         traineeJvm.getMember().getInetSocketAddress(),
                         traineeJvm.getId(),
                         exerciseRecipe,
                         e);
                 heartAttack(heartAttack);
+                throw new HeartAttackAlreadyThrownRuntimeException(e);
             }
         }
     }
