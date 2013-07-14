@@ -43,7 +43,6 @@ public final class Utils {
     }
 
     public static byte[] zip(File directory) throws IOException {
-        System.out.println("directory:" + directory);
         URI base = directory.toURI();
         Deque<File> queue = new LinkedList<File>();
         queue.push(directory);
@@ -104,7 +103,6 @@ public final class Utils {
 
             String fileName = zipEntry.getName();
             File file = new File(destinationDir + File.separator + fileName);
-            System.out.println("file unzip : " + file.getAbsoluteFile());
 
             if (zipEntry.isDirectory()) {
                 file.mkdirs();

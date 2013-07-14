@@ -163,8 +163,8 @@ public class TraineeVmManager {
         }
 
         if (!found) {
-            throw new RuntimeException(format("Timeout: trainee %s on host %s didn't start within %s seconds",
-                    jvm.getId(), coach.getCoachHz().getCluster().getLocalMember().getInetSocketAddress(), traineeTimeoutSec));
+            throw new RuntimeException(format("Timeout: trainee %s of workout %s on host %s didn't start within %s seconds",
+                    jvm.getId(), coach.getWorkout().getId(), coach.getCoachHz().getCluster().getLocalMember().getInetSocketAddress(), traineeTimeoutSec));
         }
         log.log(Level.INFO, "Trainee: " + jvm.getId() + " Started");
     }
