@@ -19,6 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import static com.hazelcast.heartattack.Utils.getHeartAttackHome;
@@ -32,6 +33,8 @@ public class TraineeVmManager {
     public final static String classpath = System.getProperty("java.class.path");
     public final static File heartAttackHome = getHeartAttackHome();
     public final static String classpathSperator = System.getProperty("path.separator");
+    public final static AtomicLong TRAINEE_ID_GENERATOR = new AtomicLong();
+
 
     private final List<TraineeVm> traineeJvms = new CopyOnWriteArrayList<TraineeVm>();
     private final Coach coach;
@@ -98,7 +101,7 @@ public class TraineeVmManager {
     }
 
     private TraineeVm startTraineeJvm(String traineeVmOptions, File traineeHzFile) throws IOException {
-        String traineeId = "" + System.currentTimeMillis();
+        String traineeId = "" +TRAINEE_ID_GENERATOR.incrementAndGet();
 
         String[] clientVmOptionsArray = new String[]{};
         if (traineeVmOptions != null && !traineeVmOptions.trim().isEmpty()) {
