@@ -19,6 +19,8 @@ same host.
 
 - traineeclasspath should not be only a dir, but also be a listing of jars/directories
 
+-
+
 DONE
 
 - when an exception is thrown by one of the ExerciseInstance method, it isn't correctly translated to a heartattack (lots

@@ -1,6 +1,5 @@
 package com.hazelcast.heartattack;
 
-import com.hazelcast.client.GenericError;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.*;
@@ -32,7 +31,7 @@ public class Coach {
     public static final String COACH_HEART_ATTACK_TOPIC = "Coach:heartAttackTopic";
 
     public final static File heartAttackHome = getHeartAttackHome();
-    public final static File traineesHome = new File(getHeartAttackHome(), "trainees");
+    public final static File workingDir = new File(getHeartAttackHome(), "working");
 
     private File coachHzFile;
     private volatile HazelcastInstance coachHz;
@@ -162,7 +161,7 @@ public class Coach {
     }
 
     public void start() throws Exception {
-        ensureExistingDirectory(traineesHome);
+        ensureExistingDirectory(workingDir);
 
         initCoachHazelcastInstance();
 
@@ -209,13 +208,16 @@ public class Coach {
             return null;
         }
 
-        return new File(traineesHome, _workout.getId());
+        return new File(workingDir, _workout.getId());
     }
 
     public void initWorkout(Workout workout, byte[] content) throws IOException {
-        this.workout = workout;
+        heartAttacks.clear();
 
-        File workoutDir = new File(traineesHome, workout.getId());
+        this.workout = workout;
+        this.exerciseRecipe = null;
+
+        File workoutDir = new File(workingDir, workout.getId());
         ensureExistingDirectory(workoutDir);
 
         File libDir = new File(workoutDir, "lib");

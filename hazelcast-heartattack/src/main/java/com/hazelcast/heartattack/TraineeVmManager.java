@@ -31,7 +31,6 @@ public class TraineeVmManager {
     public final static File userDir = new File(System.getProperty("user.dir"));
     public final static String classpath = System.getProperty("java.class.path");
     public final static File heartAttackHome = getHeartAttackHome();
-    public final static File traineesHome = new File(getHeartAttackHome(), "trainees");
     public final static String classpathSperator = System.getProperty("path.separator");
 
     private final List<TraineeVm> traineeJvms = new CopyOnWriteArrayList<TraineeVm>();
@@ -118,7 +117,6 @@ public class TraineeVmManager {
         args.add("-classpath");
         File libDir = new File(coach.getWorkoutHome(), "lib");
         String s = classpath + classpathSperator + new File(libDir, "*").getAbsolutePath();
-        log.log(Level.INFO, "classpath:" + s);
         args.add(s);
 
         args.addAll(Arrays.asList(clientVmOptionsArray));
@@ -176,8 +174,8 @@ public class TraineeVmManager {
             traineeClient.getLifecycleService().shutdown();
         }
 
-        List<TraineeVm> trainees = new LinkedList<TraineeVm>();
-        trainees.removeAll(traineeJvms);
+        List<TraineeVm> trainees = new LinkedList<TraineeVm>(traineeJvms);
+        traineeJvms.clear();
 
         for (TraineeVm jvm : trainees) {
             jvm.getProcess().destroy();
