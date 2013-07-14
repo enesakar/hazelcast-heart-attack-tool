@@ -10,12 +10,12 @@ TODO
 
 - better control on selecting the java virtual machine for the client
 
+DONE
+
 - currently the client is running in the directory of the jvm; which of course is no good.
 
 - the manager should have more advanced configuration to connect to the coach cluster, currently it needs to be on the
 same host.
-
-DONE
 
 - traineeclasspath should not be only a dir, but also be a listing of jars/directories
 

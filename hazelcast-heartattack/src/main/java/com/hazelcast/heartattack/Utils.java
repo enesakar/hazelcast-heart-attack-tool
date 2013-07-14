@@ -1,8 +1,12 @@
 package com.hazelcast.heartattack;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
 import java.io.*;
 import java.net.URI;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
@@ -10,6 +14,7 @@ import java.util.zip.ZipOutputStream;
 import static java.lang.String.format;
 
 public final class Utils {
+    private final static ILogger log = Logger.getLogger(Utils.class);
 
     public static void delete(File f) throws IOException {
         if (!f.exists()) return;
@@ -65,6 +70,12 @@ public final class Utils {
                 queue.push(root);
                 while (!queue.isEmpty()) {
                     File file = queue.pop();
+                    if (file.getName().equals(".DS_Store")) {
+                        continue;
+                    }
+
+                    log.log(Level.FINE, "Zipping: " + file.getAbsolutePath());
+
                     if (file.isDirectory()) {
                         String name = base.relativize(file.toURI()).getPath();
                         name = name.endsWith("/") ? name : name + "/";
@@ -112,7 +123,6 @@ public final class Utils {
     }
 
     public static void unzip(byte[] content, final File destinationDir) throws IOException {
-
         byte[] buffer = new byte[1024];
 
         ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(content));
@@ -123,19 +133,23 @@ public final class Utils {
             String fileName = zipEntry.getName();
             File file = new File(destinationDir + File.separator + fileName);
 
+            log.log(Level.FINE, "Unzipping: " + file.getAbsolutePath());
+
+
             if (zipEntry.isDirectory()) {
                 file.mkdirs();
             } else {
-
                 file.getParentFile().mkdirs();
-                file.createNewFile();
 
                 FileOutputStream fos = new FileOutputStream(file);
-                int len;
-                while ((len = zis.read(buffer)) > 0) {
-                    fos.write(buffer, 0, len);
+                try {
+                    int len;
+                    while ((len = zis.read(buffer)) > 0) {
+                        fos.write(buffer, 0, len);
+                    }
+                } finally {
+                    closeQuietly(fos);
                 }
-                fos.close();
             }
 
             zipEntry = zis.getNextEntry();

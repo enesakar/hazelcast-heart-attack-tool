@@ -2,8 +2,7 @@ package com.hazelcast.heartattack;
 
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.client.config.ClientConfig;
-import com.hazelcast.config.Config;
-import com.hazelcast.config.XmlConfigBuilder;
+import com.hazelcast.client.config.XmlClientConfigBuilder;
 import com.hazelcast.core.*;
 import com.hazelcast.heartattack.tasks.*;
 import com.hazelcast.logging.ILogger;
@@ -30,7 +29,7 @@ public class Manager {
     private final static ILogger log = Logger.getLogger(Manager.class);
 
     private Workout workout;
-    private File coachHzFile;
+    private File managerHzFile;
     private final List<HeartAttack> heartAttackList = Collections.synchronizedList(new LinkedList<HeartAttack>());
     private IExecutorService coachExecutor;
     private HazelcastInstance client;
@@ -161,11 +160,11 @@ public class Manager {
 
             if (file.getName().contains("*")) {
                 File parent = file.getParentFile();
-                String regex = file.getName().replace("*", "(.*)");
                 if (!parent.isDirectory()) {
                     throw new IOException(format("Can't create upload, file [%s] is not a directory", parent));
                 }
 
+                String regex = file.getName().replace("*", "(.*)");
                 for (File child : parent.listFiles()) {
                     if (child.getName().matches(regex)) {
                         files.add(child);
@@ -351,11 +350,7 @@ public class Manager {
     }
 
     private void initClient() throws FileNotFoundException {
-        Config coachConfig = new XmlConfigBuilder(new FileInputStream(coachHzFile)).build();
-
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setGroupConfig(coachConfig.getGroupConfig());
-        clientConfig.addAddress("localhost:" + coachConfig.getNetworkConfig().getPort());
+        ClientConfig clientConfig = new XmlClientConfigBuilder(new FileInputStream(managerHzFile)).build();
         client = HazelcastClient.newHazelcastClient(clientConfig);
         coachExecutor = client.getExecutorService("Coach:Executor");
         statusTopic = client.getTopic(Coach.COACH_HEART_ATTACK_TOPIC);
@@ -387,8 +382,8 @@ public class Manager {
                 .withRequiredArg().ofType(String.class).defaultsTo("");
         OptionSpec<String> traineeHzFileSpec = parser.accepts("traineeHzFile", "The Hazelcast xml configuration file for the trainee")
                 .withRequiredArg().ofType(String.class).defaultsTo(HEART_ATTACK_HOME + File.separator + "conf" + File.separator + "trainee-hazelcast.xml");
-        OptionSpec<String> coachHzFileSpec = parser.accepts("coachHzFile", "The Hazelcast xml configuration file for the coach")
-                .withRequiredArg().ofType(String.class).defaultsTo(HEART_ATTACK_HOME + File.separator + "conf" + File.separator + "coach-hazelcast.xml");
+        OptionSpec<String> managerHzFileSpec = parser.accepts("traineeHzFile", "The client Hazelcast xml configuration file for the manager")
+                .withRequiredArg().ofType(String.class).defaultsTo(HEART_ATTACK_HOME + File.separator + "conf" + File.separator + "manager-hazelcast.xml");
 
         OptionSpec helpSpec = parser.accepts("help", "Show help").forHelp();
 
@@ -409,11 +404,11 @@ public class Manager {
                 manager.setTraineeClassPath(options.valueOf(traineeClassPathSpec));
             }
 
-            File coachHzFile = new File(options.valueOf(coachHzFileSpec));
-            if (!coachHzFile.exists()) {
-                exitWithError(format("Coach Hazelcast config file [%s] does not exist.\n", coachHzFile));
+            File managerHzFile = new File(options.valueOf(managerHzFileSpec));
+            if (!managerHzFile.exists()) {
+                exitWithError(format("Manager Hazelcast config file [%s] does not exist.\n", managerHzFile));
             }
-            manager.coachHzFile = coachHzFile;
+            manager.managerHzFile = managerHzFile;
 
             String workoutFileName = "workout.properties";
             List<String> workoutFiles = options.nonOptionArguments();
