@@ -4,13 +4,16 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.XmlConfigBuilder;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.core.IMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
+
+import static com.hazelcast.heartattack.Utils.writeObject;
 
 public class Trainee {
 
@@ -26,7 +29,7 @@ public class Trainee {
         this.traineeId = traineeId;
     }
 
-    private void setTraineeHzFile(String traineeHzFile) {
+    public void setTraineeHzFile(String traineeHzFile) {
         this.traineeHzFile = traineeHzFile;
     }
 
@@ -38,26 +41,13 @@ public class Trainee {
         signalStartToCoach();
     }
 
-    public void signalStartToCoach() {
+    private void signalStartToCoach() {
         InetSocketAddress address = hz.getCluster().getLocalMember().getInetSocketAddress();
-        File file = new File(traineeId + ".address.tmp");
-
-        try {
-            final FileOutputStream fous = new FileOutputStream(file);
-            ObjectOutput output = new ObjectOutputStream(fous);
-            try {
-                output.writeObject(address);
-            } finally {
-                Utils.closeQuietly(fous);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        file.renameTo(new File(traineeId+".address"));
+        File file = new File(traineeId + ".address");
+        writeObject(address, file);
     }
 
-    public HazelcastInstance createHazelcastInstance() {
+    private HazelcastInstance createHazelcastInstance() {
         XmlConfigBuilder configBuilder;
         try {
             configBuilder = new XmlConfigBuilder(traineeHzFile);

@@ -2,10 +2,18 @@ package com.hazelcast.heartattack;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.Member;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.File;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.logging.Level;
+
+import static com.hazelcast.heartattack.Utils.readObject;
 
 public class HeartAttackMonitor implements Runnable {
+    final static ILogger log = Logger.getLogger(HeartAttackMonitor.class);
 
     private Coach coach;
 
@@ -13,30 +21,69 @@ public class HeartAttackMonitor implements Runnable {
         this.coach = coach;
     }
 
+    private void addIfNotNull(List<HeartAttack> heartAttacks, HeartAttack h) {
+        if (h != null)
+            heartAttacks.add(h);
+    }
+
     public void run() {
         for (; ; ) {
-            for (TraineeVm jvm : coach.getTraineeVmManager().getTraineeJvms()) {
-                HeartAttack heartAttack = null;
+            try {
+                detect();
+            } catch (Exception e) {
+                log.log(Level.SEVERE, "Failed to scan for heart attacks", e);
+            }
+            Utils.sleepSeconds(1);
+        }
+    }
 
-                if (heartAttack == null) {
-                    heartAttack = detectHeartAttackFile(jvm);
-                }
+    private void detect() {
+        final TraineeVmManager traineeVmManager = coach.getTraineeVmManager();
 
-                if (heartAttack == null) {
-                    heartAttack = detectUnexpectedExit(jvm);
-                }
+        for (TraineeVm jvm : traineeVmManager.getTraineeJvms()) {
 
-                if (heartAttack == null) {
-                    heartAttack = detectMembershipFailure(jvm);
-                }
+            List<HeartAttack> heartAttacks = new LinkedList<HeartAttack>();
 
-                if (heartAttack != null) {
-                    coach.getTraineeVmManager().destroy(jvm);
+            addIfNotNull(heartAttacks, detectOomeHeartAttackFile(jvm));
+
+            addIfNotNull(heartAttacks, detectUnexpectedExit(jvm));
+
+            addIfNotNull(heartAttacks, detectMembershipFailure(jvm));
+
+            if (!heartAttacks.isEmpty()) {
+                traineeVmManager.destroy(jvm);
+
+                for (HeartAttack heartAttack : heartAttacks) {
                     coach.heartAttack(heartAttack);
                 }
             }
+        }
 
-            Utils.sleepSeconds(1);
+        File workoutHome = coach.getWorkoutHome();
+        if (workoutHome != null) {
+            File[] files = workoutHome.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    final String name = file.getName();
+                    if (name.endsWith(".exception")) {
+                        Throwable cause = (Throwable) readObject(file);
+                        file.delete();
+
+                        String traineeId = name.substring(0, name.indexOf('.'));
+                        log.log(Level.INFO,"traineeId: "+traineeId);
+                        TraineeVm jvm = traineeVmManager.getTrainee(traineeId);
+                        HeartAttack heartAttack = new HeartAttack(
+                                "Exception thrown in trainee",
+                                coach.getCoachHz().getCluster().getLocalMember().getInetSocketAddress(),
+                                jvm==null?null:jvm.getMember().getInetSocketAddress(),
+                                traineeId,
+                                coach.getExerciseRecipe(),
+                                cause);
+                        coach.heartAttack(heartAttack);
+                        traineeVmManager.destroy(jvm);
+                    }
+                }
+            }
         }
     }
 
@@ -72,13 +119,13 @@ public class HeartAttackMonitor implements Runnable {
         return null;
     }
 
-    private HeartAttack detectHeartAttackFile(TraineeVm jvm) {
+    private HeartAttack detectOomeHeartAttackFile(TraineeVm jvm) {
         File workoutDir = coach.getWorkoutHome();
-        if(workoutDir == null){
+        if (workoutDir == null) {
             return null;
         }
 
-        File file = new File(workoutDir, jvm.getId() + ".heartattack");
+        File file = new File(workoutDir, jvm.getId() + ".oome");
         if (!file.exists()) {
             return null;
         }

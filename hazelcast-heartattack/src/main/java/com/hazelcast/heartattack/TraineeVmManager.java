@@ -11,9 +11,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -62,7 +60,7 @@ public class TraineeVmManager {
 
         File traineeHzFile = File.createTempFile("trainee-hazelcast", "xml");
         traineeHzFile.deleteOnExit();
-        Utils.write(traineeHzFile, settings.getHzConfig());
+        Utils.writeText(settings.getHzConfig(), traineeHzFile);
 
         List<TraineeVm> trainees = new LinkedList<TraineeVm>();
 
@@ -109,7 +107,7 @@ public class TraineeVmManager {
 
         List<String> args = new LinkedList<String>();
         args.add("java");
-        args.add(format("-XX:OnOutOfMemoryError=\"\"touch %s/%s.heartattack\"\"", workoutHome, traineeId));
+        args.add(format("-XX:OnOutOfMemoryError=\"\"touch %s.oome\"\"", traineeId));
         args.add("-DHEART_ATTACK_HOME=" + getHeartAttackHome());
         args.add("-Dhazelcast.logging.type=log4j");
         args.add("-DtraineeId=" + traineeId);
@@ -182,21 +180,11 @@ public class TraineeVmManager {
         File workoutHome = coach.getWorkoutHome();
 
         File file = new File(workoutHome, jvm.getId() + ".address");
-        if (!file.exists()) return null;
-
-        try {
-            FileInputStream fis = new FileInputStream(file);
-            try {
-                ObjectInputStream in = new ObjectInputStream(fis);
-                return (InetSocketAddress) in.readObject();
-            } finally {
-                Utils.closeQuietly(fis);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
+        if (!file.exists()) {
+            return null;
         }
+
+        return (InetSocketAddress) Utils.readObject(file);
     }
 
     public void destroyAll() {
@@ -239,5 +227,14 @@ public class TraineeVmManager {
         } catch (InterruptedException e) {
         }
         traineeJvms.remove(jvm);
+    }
+
+    public TraineeVm getTrainee(String traineeId) {
+        for(TraineeVm trainee: traineeJvms){
+            if(traineeId.equals(trainee.getId())){
+                return trainee;
+            }
+        }
+        return null;
     }
 }

@@ -12,6 +12,7 @@ import java.util.logging.Level;
 
 public abstract class AbstractExercise implements Exercise {
 
+
     final static ILogger log = Logger.getLogger(AbstractExercise.class.getName());
 
     protected HazelcastInstance hazelcastInstance;
@@ -81,10 +82,11 @@ public abstract class AbstractExercise implements Exercise {
                 startLatch.await();
                 runnable.run();
             } catch (Throwable t) {
+
                 log.log(Level.SEVERE, "Error detected", t);
-                //give the logger some time to write everything to disk if needed.
                 Utils.sleepSeconds(2);
-                System.exit(-1);
+
+                ExerciseUtils.signalHeartAttack(t);
             }
         }
     }

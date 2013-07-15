@@ -10,54 +10,24 @@ TODO
 
 - better control on selecting the java virtual machine for the client
 
+- makes it possible to send messages to the trainees; e..g increase load or something
+
+- make it possible to also work with clients; currently each member will always be a member.. not a client
+
+- make it possible to have multiple clusters
+
+- make it possible for the exercise to raise a heart attack.
+
+- exercise recipe needs to be send to the trainee
+
+- the coach address needs to be send to the trainee
+
 DONE
 
-- currently the client is running in the directory of the jvm; which of course is no good.
-
-- the manager should have more advanced configuration to connect to the coach cluster, currently it needs to be on the
-same host.
-
-- traineeclasspath should not be only a dir, but also be a listing of jars/directories
-
-- the trainee startup timeout doesn't work
-
-- when coach is reused.. then sometimes it fails
-
-- when a manager starts, it should display the members
-
-- the trainee and coach should not communicate through the map the find the id/member information since I have the impression
-that the map is broken. So probably better to use a file containing the member info,
-
-- the trainee logs should be written in the trainee subdir for that specific workout
-
-- when an exception is thrown by one of the ExerciseInstance method, it isn't correctly translated to a heartattack (lots
-of information missing).
-
-- when exercise fails to start correctly, the system keeps running and causing exception
-
-- the trainee heart attack file should be written in the trainee subdir
-
-- it should be easy to include new jars for custom exercises. These jars should be uploaded by the manager
-to the coaches.
-
-- the manager should coordinate running of a workout, not the coach. This makes it easier to upload artifact
-since each node will be treated equally
-
-- copying of jars causes problem
-
-- the exerciserecipe should have a multiline tostring for prettier logging
-
-- replace the shitty json binding by properties
-
-- the properties of the exerciserecipe need to be bound on the exercise
-
-- rename exerciseinstance to exercise and exercise to exerciserecipe
-
-- remove the 'exercisejunk' class. Bind directly on the ExerciseInstance
-
-- automatically clear the trainee directory option
 
 NICE TO HAVE
+
+- currently there is no protection against multiple managers contacting the coaches.
 
 - coaches need to write to unique filename so that multiple coaches can run in parallel (for testing).
 

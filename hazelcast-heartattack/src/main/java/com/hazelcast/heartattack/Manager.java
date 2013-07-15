@@ -382,7 +382,7 @@ public class Manager {
                 .withRequiredArg().ofType(String.class).defaultsTo("");
         OptionSpec<String> traineeHzFileSpec = parser.accepts("traineeHzFile", "The Hazelcast xml configuration file for the trainee")
                 .withRequiredArg().ofType(String.class).defaultsTo(HEART_ATTACK_HOME + File.separator + "conf" + File.separator + "trainee-hazelcast.xml");
-        OptionSpec<String> managerHzFileSpec = parser.accepts("traineeHzFile", "The client Hazelcast xml configuration file for the manager")
+       OptionSpec<String> managerHzFileSpec = parser.accepts("managerHzFile", "The client Hazelcast xml configuration file for the manager")
                 .withRequiredArg().ofType(String.class).defaultsTo(HEART_ATTACK_HOME + File.separator + "conf" + File.separator + "manager-hazelcast.xml");
 
         OptionSpec helpSpec = parser.accepts("help", "Show help").forHelp();

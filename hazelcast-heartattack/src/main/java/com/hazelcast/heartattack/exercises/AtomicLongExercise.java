@@ -12,11 +12,11 @@ public class AtomicLongExercise extends AbstractExercise {
 
     private final static ILogger log = Logger.getLogger(AtomicLongExercise.class);
 
-    private IAtomicLong totalCounter;
-    private IAtomicLong[] counters;
-
     private int countersLength = 1000;
     private int threadCount = 1;
+
+    private IAtomicLong totalCounter;
+    private IAtomicLong[] counters;
 
     @Override
     public void localSetup() {
@@ -65,6 +65,10 @@ public class AtomicLongExercise extends AbstractExercise {
                 counters[index].incrementAndGet();
                 if (iteration % 10000 == 0) {
                     log.log(Level.INFO, Thread.currentThread().getName() + " At iteration: " + iteration);
+                }
+
+                if(iteration == 100){
+                    throw new RuntimeException();
                 }
                 iteration++;
             }

@@ -16,6 +16,74 @@ import static java.lang.String.format;
 public final class Utils {
     private final static ILogger log = Logger.getLogger(Utils.class);
 
+    public static void writeObject(Object o, File file) {
+        File tmpFile = new File(file.getParent(), file.getName() + ".tmp");
+
+        try {
+            final FileOutputStream fous = new FileOutputStream(tmpFile);
+            try {
+                ObjectOutput output = new ObjectOutputStream(fous);
+                output.writeObject(o);
+            } finally {
+                Utils.closeQuietly(fous);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        if (!tmpFile.renameTo(file)) {
+            throw new RuntimeException(format("Could not rename [%s] to [%s]", tmpFile.getAbsolutePath(), file.getAbsolutePath()));
+        }
+    }
+
+    public static Object readObject(File file) {
+        try {
+            FileInputStream fis = new FileInputStream(file);
+            try {
+                ObjectInputStream in = new ObjectInputStream(fis);
+                return in.readObject();
+            } finally {
+                Utils.closeQuietly(fis);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void writeText(String text, File file) throws IOException {
+        FileOutputStream stream = new FileOutputStream(file);
+        try {
+            Writer writer = new BufferedWriter(new OutputStreamWriter(stream));
+            writer.write(text);
+            writer.close();
+        } finally {
+            closeQuietly(stream);
+        }
+    }
+
+    public static String asText(File file) {
+        try {
+            FileInputStream stream = new FileInputStream(file);
+            try {
+                Reader reader = new BufferedReader(new InputStreamReader(stream));
+                StringBuilder builder = new StringBuilder();
+                char[] buffer = new char[8192];
+                int read;
+                while ((read = reader.read(buffer, 0, buffer.length)) > 0) {
+                    builder.append(buffer, 0, read);
+                }
+                return builder.toString();
+            } finally {
+                closeQuietly(stream);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
     public static void delete(File f) throws IOException {
         if (!f.exists()) return;
 
@@ -159,40 +227,6 @@ public final class Utils {
         zis.close();
     }
 
-    public static void write(File file, String text) {
-        try {
-            FileOutputStream stream = new FileOutputStream(file);
-            try {
-                Writer writer = new BufferedWriter(new OutputStreamWriter(stream));
-                writer.write(text);
-                writer.close();
-            } finally {
-                closeQuietly(stream);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public static String asText(File file) {
-        try {
-            FileInputStream stream = new FileInputStream(file);
-            try {
-                Reader reader = new BufferedReader(new InputStreamReader(stream));
-                StringBuilder builder = new StringBuilder();
-                char[] buffer = new char[8192];
-                int read;
-                while ((read = reader.read(buffer, 0, buffer.length)) > 0) {
-                    builder.append(buffer, 0, read);
-                }
-                return builder.toString();
-            } finally {
-                closeQuietly(stream);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     public static File getHeartAttackHome() {
         String heartAttackHome = System.getenv("HEART_ATTACK_HOME");
