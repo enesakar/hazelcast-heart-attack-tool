@@ -67,9 +67,6 @@ public class AtomicLongExercise extends AbstractExercise {
                     log.log(Level.INFO, Thread.currentThread().getName() + " At iteration: " + iteration);
                 }
 
-                if(iteration == 100){
-                    throw new RuntimeException();
-                }
                 iteration++;
             }
 
