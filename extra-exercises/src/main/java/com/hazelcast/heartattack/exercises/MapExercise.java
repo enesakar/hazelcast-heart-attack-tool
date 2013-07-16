@@ -78,6 +78,6 @@ public class MapExercise extends AbstractExercise {
 
     public static void main(String[] args) throws Exception {
         MapExercise mapExercise = new MapExercise();
-        new ExerciseRunner().run(mapExercise, 6000);
+        new ExerciseRunner().run(mapExercise, 20);
     }
 }

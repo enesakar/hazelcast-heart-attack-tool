@@ -189,7 +189,6 @@ public class Coach {
                 parser.printHelpOn(System.out);
                 System.exit(0);
             }
-
             Coach coach = new Coach();
             File coachHzFile = new File(options.valueOf(coachHzFileSpec));
             if (!coachHzFile.exists()) {

@@ -37,16 +37,13 @@ public class ExecutorExercise extends AbstractExercise {
     @Override
     public void localSetup() {
         log.log(Level.INFO, "localSetup");
-
         executors = new IExecutorService[executorCount];
         for (int k = 0; k < executors.length; k++) {
             executors[k] = getHazelcastInstance().getExecutorService(exerciseId + ":Executor-" + k);
         }
-
         for (int k = 0; k < threadCount; k++) {
             spawn(new Worker());
         }
-
         executedCounter = hazelcastInstance.getAtomicLong(exerciseId + ":ExecutedCounter");
         expectedExecutedCounter = hazelcastInstance.getAtomicLong(exerciseId + ":ExpectedExecutedCounter");
     }
